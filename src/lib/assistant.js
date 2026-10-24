@@ -129,6 +129,7 @@ const PURPOSE_NAME = { gaming: "gaming", streaming: "gaming + streaming", creato
 
 const MAIN_CHIPS = [
   { label: "🛠️ Help me build a new PC" },
+    { label: "🧩 Build it yourself", href: "/build-it-yourself" },
   { label: "🎮 Suggest a gaming PC" },
   { label: "🎬 Video editing / 3D PC" },
   { label: "🖥️ Show monitors" },

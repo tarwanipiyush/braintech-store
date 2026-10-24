@@ -1,5 +1,6 @@
 "use client";
 
+import AddToCartControl from "../../components/AddToCartControl";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
@@ -47,8 +48,7 @@ export default function ProductPage() {
             <div className="mt-5 flex flex-wrap items-center gap-3"><span className="text-3xl font-black">{money(product.price)}</span><del className="text-gray-400">{money(product.oldPrice)}</del><span className="rounded bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700">{Math.round((1-product.price/product.oldPrice)*100)}% off (demo)</span></div>
             <p className="mt-5 leading-7 text-gray-600">{product.description}</p>
             <ul className="mt-5 space-y-2 text-sm text-gray-700">{product.features.map((feature) => <li key={feature}>✓ {feature}</li>)}</ul>
-            <button onClick={() => { addToCart(product); setAdded(true); }} className="mt-8 w-full rounded-lg bg-rose-600 px-6 py-4 font-extrabold text-white transition hover:bg-rose-700">＋ ADD TO CART</button>
-            {added && <p role="status" className="mt-3 text-sm font-bold text-emerald-700">Added to cart successfully. <Link href="/cart" className="underline">View cart</Link></p>}
+              <div className="mt-4"><AddToCartControl product={product} tone="light" /></div>
             <p className="mt-4 text-xs leading-5 text-gray-400">Demo storefront only. Product details, pricing, availability and specifications are illustrative and must be confirmed against the official inventory before purchase.</p>
             <Link href="/" className="mt-5 text-sm font-bold text-rose-600 hover:underline">← Continue shopping</Link>
           </div>

@@ -1,8 +1,7 @@
+
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import SiteHeader from "./components/SiteHeader";
-import SiteFooter from "./components/SiteFooter";
-import AssistantWidget from "./components/AssistantWidget";
+import SiteLayout from "./components/SiteLayout";
 import { CartProvider } from "@/context/CartContext";
 
 const geistSans = Geist({
@@ -30,11 +29,7 @@ export default function RootLayout({ children }) {
     >
       <body className="min-h-full flex flex-col">
         <CartProvider>
-          <SiteHeader />
-          <main className="flex-1">{children}</main>
-          <SiteFooter />
-                    <SiteFooter />
-          <AssistantWidget />
+          <SiteLayout>{children}</SiteLayout>
         </CartProvider>
       </body>
     </html>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCart } from "@/context/CartContext";
+import AddToCartControl from "./AddToCartControl";
 import { products } from "@/data/products";
 
 const formatPrice = (amount) =>
@@ -13,8 +13,6 @@ export default function FeaturedProducts({
   tags = ["Bestseller", "Hot pick"],
   limit = 4,
 }) {
-  const { addToCart } = useCart();
-
   const featuredProducts = products
     .filter((product) => tags.includes(product.tag))
     .slice(0, limit);
@@ -27,10 +25,9 @@ export default function FeaturedProducts({
     <section className="featured-products-section">
       <div className="featured-products-heading">
         <div>
-          
-<span className="featured-products-kicker">
-  {title === "Best Sellers" ? "THE BRAINTECH EDIT" : "LIMITED-TIME DEALS"}
-</span>
+          <span className="featured-products-kicker">
+            {title === "Best Sellers" ? "THE BRAINTECH EDIT" : "LIMITED-TIME DEALS"}
+          </span>
 
           <h2>{title}</h2>
           <p>{subtitle}</p>
@@ -78,13 +75,7 @@ export default function FeaturedProducts({
                 )}
               </div>
 
-              <button
-                type="button"
-                className="featured-add-to-cart"
-                onClick={() => addToCart(product)}
-              >
-                + Add to Cart
-              </button>
+              <AddToCartControl product={product} />
             </div>
           </article>
         ))}

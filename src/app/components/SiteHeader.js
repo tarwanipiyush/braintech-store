@@ -254,6 +254,7 @@ const NAV = [
   { key: "PC Builds", href: shopLink({ category: "PC Builds" }), menu: true },
   { key: "Monitors", href: shopLink({ category: "Monitors" }), menu: true },
   { key: "Special Offers", href: shopLink({ special: "1" }), menu: true },
+  { key: "Build It Yourself", href: "/build-it-yourself", badge: "NEW" },
 ];
 
 export default function SiteHeader() {
@@ -263,7 +264,7 @@ export default function SiteHeader() {
 
   const [search, setSearch] = useState("");
   const [openKey, setOpenKey] = useState(null);
-    const [pinned, setPinned] = useState(false); // Browse Categories opened by a click
+  const [pinned, setPinned] = useState(false); // Browse Categories opened by a click
   const closeTimer = useRef(null);
 
   const menus = useMemo(() => buildMenus(), []);
@@ -277,7 +278,8 @@ export default function SiteHeader() {
       return 0;
     }
   }, [wishlistRaw]);
-    // A clicked (pinned) menu stays open until you click elsewhere, press Escape or pick a link.
+
+  // A clicked (pinned) menu stays open until you click elsewhere, press Escape or pick a link.
   useEffect(() => {
     if (!pinned) return undefined;
     function onDown(event) {
@@ -308,7 +310,7 @@ export default function SiteHeader() {
     window.clearTimeout(closeTimer.current);
     setOpenKey(key);
   };
-   const scheduleClose = () => {
+  const scheduleClose = () => {
     if (pinned) return;
     window.clearTimeout(closeTimer.current);
     closeTimer.current = window.setTimeout(() => setOpenKey(null), 160);
@@ -412,7 +414,7 @@ export default function SiteHeader() {
           <div className="bt-nav-inner">
             {/* Browse Categories */}
             <NavItem id="browse" openKey={openKey} onOpen={openMenu} onLeave={scheduleClose} onClose={closeNow}>
-                            <button
+              <button
                 type="button"
                 className={`bt-link bt-browse-btn ${pinned ? "is-pinned" : ""}`}
                 onClick={toggleBrowse}
@@ -444,6 +446,7 @@ export default function SiteHeader() {
                   onClick={item.key === "Home" ? goHome : closeNow}
                 >
                   {item.key}
+                  {item.badge && <em className="bt-badge">{item.badge}</em>}
                   {item.menu && <i className="bt-chevron">▾</i>}
                 </Link>
                 {item.menu && openKey === item.key && (
