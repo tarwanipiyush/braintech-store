@@ -1,3 +1,5 @@
+// BrainTech Store checkout page
+
 "use client";
 
 import { useState } from "react";
