@@ -21,6 +21,7 @@ const defaultSettings = {
   estimatedDelivery: "3–7 business days",
   taxEnabled: false,
   taxRate: "18",
+  codEnabled: false,
   maintenanceMode: false,
 };
 
@@ -152,6 +153,7 @@ export default function AdminSettingsPage() {
           >
             Reset defaults
           </button>
+
           <button
             type="submit"
             form="store-settings-form"
@@ -170,7 +172,10 @@ export default function AdminSettingsPage() {
         </span>
       </div>
 
-      {message && <div className="store-settings-success">{message}</div>}
+      {message && (
+        <div className="store-settings-success">{message}</div>
+      )}
+
       {error && <div className="store-settings-error">{error}</div>}
 
       <div className="store-settings-layout">
@@ -179,9 +184,7 @@ export default function AdminSettingsPage() {
             <button
               key={section.id}
               type="button"
-              className={
-                activeSection === section.id ? "active" : ""
-              }
+              className={activeSection === section.id ? "active" : ""}
               onClick={() => setActiveSection(section.id)}
             >
               <span>{section.icon}</span>
@@ -336,7 +339,9 @@ export default function AdminSettingsPage() {
                       updateField("freeShippingThreshold", e.target.value)
                     }
                   />
-                  <small>Enter 0 if you intend to offer free shipping on every order.</small>
+                  <small>
+                    Enter 0 if you intend to offer free shipping on every order.
+                  </small>
                 </div>
 
                 <div className="store-settings-field full">
@@ -360,7 +365,7 @@ export default function AdminSettingsPage() {
             <section className="store-settings-card">
               <div className="store-settings-card-heading">
                 <h2>Tax & checkout</h2>
-                <p>Set intended tax preferences for future integration.</p>
+                <p>Set intended tax and payment preferences for future integration.</p>
               </div>
 
               <label className="store-settings-toggle">
@@ -373,7 +378,9 @@ export default function AdminSettingsPage() {
                 <input
                   type="checkbox"
                   checked={settings.taxEnabled}
-                  onChange={(e) => updateField("taxEnabled", e.target.checked)}
+                  onChange={(e) =>
+                    updateField("taxEnabled", e.target.checked)
+                  }
                 />
               </label>
 
@@ -390,10 +397,46 @@ export default function AdminSettingsPage() {
                     onChange={(e) => updateField("taxRate", e.target.value)}
                   />
                   <small>
-                    Confirm the applicable rate and product-specific tax treatment
-                    with your tax adviser before using this for real orders.
+                    Confirm the applicable rate and product-specific tax
+                    treatment with your tax adviser before using this for real
+                    orders.
                   </small>
                 </div>
+              </div>
+
+              <div className="store-settings-divider" />
+
+              <div className="store-settings-card-heading">
+                <h2>Payment methods</h2>
+                <p>Choose which payment methods you intend to offer.</p>
+              </div>
+
+              <label className="store-settings-toggle">
+                <span>
+                  <strong>Cash on Delivery (COD)</strong>
+                  <small>
+                    Turn this on when you want to allow customers to pay when
+                    their order is delivered. This preference is currently
+                    saved in this browser only.
+                  </small>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={settings.codEnabled}
+                  onChange={(e) =>
+                    updateField("codEnabled", e.target.checked)
+                  }
+                />
+              </label>
+
+              <div className="store-settings-info">
+                <strong>Payment integration pending</strong>
+                <p>
+                  This COD toggle saves your preference in this browser. It
+                  does not yet control checkout or enforce payment availability
+                  on the server. We will connect it to checkout and shared
+                  backend storage next.
+                </p>
               </div>
             </section>
           )}
@@ -425,9 +468,9 @@ export default function AdminSettingsPage() {
               <div className="store-settings-info">
                 <strong>Backend integration pending</strong>
                 <p>
-                  These settings will need to be connected to your Hostinger
-                  database and the relevant checkout/storefront logic before
-                  they affect customers.
+                  These settings must be connected to shared backend storage
+                  and the relevant checkout/storefront logic before they affect
+                  customers.
                 </p>
               </div>
             </section>

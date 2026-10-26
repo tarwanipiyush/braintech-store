@@ -1,8 +1,6 @@
-// BrainTech Store checkout page
-
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -16,30 +14,176 @@ const initialAddress = {
   state: "",
 };
 
-const fields = [
-  { name: "fullName", label: "Full name", placeholder: "Enter recipient's full name", required: true },
-  { name: "phone", label: "Mobile number", placeholder: "10-digit mobile number", required: true },
-  { name: "pincode", label: "PIN code", placeholder: "6-digit PIN code", required: true },
-  { name: "address", label: "House / Flat, Street and Area", placeholder: "Enter your complete delivery address", required: true },
-  { name: "landmark", label: "Landmark (optional)", placeholder: "Nearby landmark", required: false },
-  { name: "city", label: "City", placeholder: "Enter city", required: true },
-  { name: "state", label: "State", placeholder: "Enter state", required: true },
+const indianStates = [
+  "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
+  "Bihar",
+  "Chhattisgarh",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Madhya Pradesh",
+  "Maharashtra",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "Nagaland",
+  "Odisha",
+  "Punjab",
+  "Rajasthan",
+  "Sikkim",
+  "Tamil Nadu",
+  "Telangana",
+  "Tripura",
+  "Uttar Pradesh",
+  "Uttarakhand",
+  "West Bengal",
+  "Andaman and Nicobar Islands",
+  "Chandigarh",
+  "Dadra and Nagar Haveli and Daman and Diu",
+  "Delhi",
+  "Jammu and Kashmir",
+  "Ladakh",
+  "Lakshadweep",
+  "Puducherry",
 ];
+
+const autoCompleteValues = {
+  fullName: "name",
+  phone: "tel",
+  pincode: "postal-code",
+  address: "street-address",
+  landmark: "off",
+  city: "address-level2",
+  state: "address-level1",
+};
 
 export default function CheckoutPage() {
   const router = useRouter();
+
   const [address, setAddress] = useState(initialAddress);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [pinStatus, setPinStatus] = useState("");
+  const [pinMessage, setPinMessage] = useState("");
+
+  const lookupRequest = useRef(0);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("braintech-delivery-address");
+
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setAddress({ ...initialAddress, ...parsed });
+      }
+    } catch {
+      // Continue with a blank address if saved data cannot be read.
+    }
+  }, []);
+
+  async function lookupPincode(pincode) {
+    const requestId = ++lookupRequest.current;
+
+    if (!/^\d{6}$/.test(pincode)) {
+      setPinStatus("");
+      setPinMessage("");
+      return;
+    }
+
+    setPinStatus("loading");
+    setPinMessage("Looking up your PIN code...");
+
+    try {
+      const response = await fetch(
+        `https://api.postalpincode.in/pincode/${pincode}`
+      );
+
+      if (!response.ok) {
+        throw new Error("PIN lookup request failed");
+      }
+
+      const result = await response.json();
+
+      // Ignore an older response if the user has changed the PIN code.
+      if (requestId !== lookupRequest.current) return;
+
+      const record = result?.[0];
+
+      if (record?.Status !== "Success" || !record?.PostOffice?.length) {
+        setPinStatus("error");
+        setPinMessage(
+          "PIN code not found. Please check it or enter your city and state manually."
+        );
+        return;
+      }
+
+      const postOffice = record.PostOffice[0];
+      const district = postOffice.District || "";
+      const state = postOffice.State || "";
+
+      setAddress((previous) => ({
+        ...previous,
+        city: district || previous.city,
+        state: indianStates.includes(state) ? state : previous.state,
+      }));
+
+      setPinStatus("success");
+      setPinMessage(
+        `Location found: ${district || postOffice.Name}${state ? `, ${state}` : ""}. Please confirm your details.`
+      );
+    } catch {
+      if (requestId !== lookupRequest.current) return;
+
+      setPinStatus("error");
+      setPinMessage(
+        "Unable to look up this PIN code right now. You can enter the city and state manually."
+      );
+    }
+  }
 
   function handleChange(event) {
     const { name, value } = event.target;
-    setAddress((previous) => ({ ...previous, [name]: value }));
+
+    if (name === "pincode") {
+      const pincode = value.replace(/\D/g, "").slice(0, 6);
+
+      setAddress((previous) => ({
+        ...previous,
+        pincode,
+      }));
+
+      setError("");
+      setPinStatus("");
+      setPinMessage("");
+
+      if (pincode.length === 6) {
+        lookupPincode(pincode);
+      } else {
+        // Invalidate any request associated with an older PIN code.
+        lookupRequest.current += 1;
+      }
+
+      return;
+    }
+
+    setAddress((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
+
     setError("");
   }
 
   function handleSubmit(event) {
     event.preventDefault();
+
+    if (saving) return;
 
     const phone = address.phone.replace(/\D/g, "");
     const pincode = address.pincode.replace(/\D/g, "");
@@ -68,28 +212,34 @@ export default function CheckoutPage() {
       return;
     }
 
-    setSaving(true);
+    if (!indianStates.includes(address.state)) {
+      setError("Please select a valid state or union territory.");
+      return;
+    }
+
+    const cleanAddress = {
+      ...address,
+      fullName: address.fullName.trim(),
+      phone,
+      pincode,
+      address: address.address.trim(),
+      landmark: address.landmark.trim(),
+      city: address.city.trim(),
+      state: address.state.trim(),
+    };
 
     try {
-      const cleanAddress = {
-        ...address,
-        fullName: address.fullName.trim(),
-        phone,
-        pincode,
-        address: address.address.trim(),
-        landmark: address.landmark.trim(),
-        city: address.city.trim(),
-        state: address.state.trim(),
-      };
-
       localStorage.setItem(
         "braintech-delivery-address",
         JSON.stringify(cleanAddress)
       );
 
+      setSaving(true);
       router.push("/checkout/review");
     } catch {
-      setError("Unable to save your address in this browser. Please try again.");
+      setError(
+        "Unable to save your address in this browser. Please try again."
+      );
       setSaving(false);
     }
   }
@@ -106,32 +256,38 @@ export default function CheckoutPage() {
         </Link>
 
         <div className="checkout-secure">
-          <span>✓</span> Checkout
+          <span>✓</span> Secure checkout
         </div>
       </header>
 
       <div className="checkout-container">
-        <div className="checkout-breadcrumb">
+        <nav className="checkout-breadcrumb" aria-label="Breadcrumb">
           <Link href="/">Home</Link>
           <span>/</span>
           <Link href="/cart">Cart</Link>
           <span>/</span>
           <strong>Delivery Address</strong>
-        </div>
+        </nav>
 
         <div className="checkout-heading">
           <div>
             <span className="checkout-eyebrow">ALMOST THERE</span>
             <h1>Where should we deliver?</h1>
-            <p>Enter the address where you want your order delivered.</p>
+            <p>
+              Enter your PIN code to help fill in your delivery location.
+            </p>
           </div>
+
           <div className="checkout-step">STEP 1 OF 3</div>
         </div>
 
         <div className="checkout-layout">
           <section className="checkout-form-card">
             <div className="checkout-card-heading">
-              <div className="checkout-heading-icon">⌖</div>
+              <div className="checkout-heading-icon" aria-hidden="true">
+                ⌖
+              </div>
+
               <div>
                 <h2>Delivery details</h2>
                 <p>Fields marked with * are required.</p>
@@ -140,51 +296,144 @@ export default function CheckoutPage() {
 
             <form onSubmit={handleSubmit} noValidate>
               <div className="checkout-fields">
-                {fields.map((field) => (
-                  <div
-                    key={field.name}
-                    className={`checkout-field checkout-field-${field.name}`}
+                <div className="checkout-field">
+                  <label htmlFor="fullName">
+                    Full name <span>*</span>
+                  </label>
+                  <input
+                    id="fullName"
+                    name="fullName"
+                    type="text"
+                    value={address.fullName}
+                    onChange={handleChange}
+                    placeholder="Enter recipient's full name"
+                    autoComplete="name"
+                    maxLength={100}
+                    required
+                  />
+                </div>
+
+                <div className="checkout-field">
+                  <label htmlFor="phone">
+                    Mobile number <span>*</span>
+                  </label>
+                  <input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    value={address.phone}
+                    onChange={handleChange}
+                    placeholder="10-digit mobile number"
+                    autoComplete="tel"
+                    inputMode="numeric"
+                    maxLength={10}
+                    required
+                  />
+                </div>
+
+                <div className="checkout-field checkout-field-pincode">
+                  <label htmlFor="pincode">
+                    PIN code <span>*</span>
+                  </label>
+                  <input
+                    id="pincode"
+                    name="pincode"
+                    type="text"
+                    value={address.pincode}
+                    onChange={handleChange}
+                    placeholder="Enter 6-digit PIN code"
+                    autoComplete="postal-code"
+                    inputMode="numeric"
+                    maxLength={6}
+                    aria-describedby="pin-status"
+                    required
+                  />
+
+                  {pinMessage && (
+                    <p
+                      id="pin-status"
+                      className={`checkout-pin-message checkout-pin-${pinStatus}`}
+                      role="status"
+                      aria-live="polite"
+                    >
+                      {pinStatus === "loading" && (
+                        <span className="checkout-pin-spinner" />
+                      )}
+                      {pinStatus === "success" && "✓ "}
+                      {pinStatus === "error" && "⚠ "}
+                      {pinMessage}
+                    </p>
+                  )}
+                </div>
+
+                <div className="checkout-field checkout-field-address">
+                  <label htmlFor="address">
+                    House / Flat, Street and Area <span>*</span>
+                  </label>
+                  <input
+                    id="address"
+                    name="address"
+                    type="text"
+                    value={address.address}
+                    onChange={handleChange}
+                    placeholder="Enter your complete delivery address"
+                    autoComplete="street-address"
+                    maxLength={200}
+                    required
+                  />
+                </div>
+
+                <div className="checkout-field">
+                  <label htmlFor="landmark">Landmark (optional)</label>
+                  <input
+                    id="landmark"
+                    name="landmark"
+                    type="text"
+                    value={address.landmark}
+                    onChange={handleChange}
+                    placeholder="Nearby landmark"
+                    autoComplete="off"
+                    maxLength={200}
+                  />
+                </div>
+
+                <div className="checkout-field">
+                  <label htmlFor="city">
+                    City / District <span>*</span>
+                  </label>
+                  <input
+                    id="city"
+                    name="city"
+                    type="text"
+                    value={address.city}
+                    onChange={handleChange}
+                    placeholder="Auto-filled from PIN code"
+                    autoComplete="address-level2"
+                    maxLength={100}
+                    required
+                  />
+                </div>
+
+                <div className="checkout-field checkout-field-state">
+                  <label htmlFor="state">
+                    State / Union territory <span>*</span>
+                  </label>
+                  <select
+                    id="state"
+                    name="state"
+                    value={address.state}
+                    onChange={handleChange}
+                    autoComplete={autoCompleteValues.state}
+                    required
                   >
-                    <label htmlFor={field.name}>
-                      {field.label}
-                      {field.required && <span> *</span>}
-                    </label>
-                    <input
-                      id={field.name}
-                      name={field.name}
-                      type="text"
-                      value={address[field.name]}
-                      onChange={handleChange}
-                      placeholder={field.placeholder}
-                      required={field.required}
-                      autoComplete={
-                        {
-                          fullName: "name",
-                          phone: "tel",
-                          pincode: "postal-code",
-                          address: "street-address",
-                          city: "address-level2",
-                          state: "address-level1",
-                        }[field.name] || "off"
-                      }
-                      maxLength={
-                        field.name === "phone"
-                          ? 10
-                          : field.name === "pincode"
-                            ? 6
-                            : field.name === "fullName"
-                              ? 100
-                              : 200
-                      }
-                      inputMode={
-                        field.name === "phone" ||
-                        field.name === "pincode"
-                          ? "numeric"
-                          : "text"
-                      }
-                    />
-                  </div>
-                ))}
+                    <option value="">Select your state</option>
+                    {indianStates.map((state) => (
+                      <option key={state} value={state}>
+                        {state}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               {error && (
@@ -194,15 +443,18 @@ export default function CheckoutPage() {
               )}
 
               <div className="checkout-form-note">
-                <span>🔒</span>
-                Your delivery details are saved in this browser for this
-                checkout.
+                <span aria-hidden="true">🔒</span>
+                <span>
+                  Your delivery details are saved in this browser for this
+                  checkout.
+                </span>
               </div>
 
               <div className="checkout-form-actions">
                 <Link href="/cart" className="checkout-back-button">
                   ← Back to cart
                 </Link>
+
                 <button
                   type="submit"
                   className="checkout-continue-button"
@@ -215,31 +467,36 @@ export default function CheckoutPage() {
           </section>
 
           <aside className="checkout-help-card">
-            <div className="checkout-help-icon">📦</div>
+            <div className="checkout-help-icon" aria-hidden="true">
+              📦
+            </div>
+
             <h3>Delivery made simple</h3>
+
             <p>
-              Double-check your address and PIN code to help ensure your
-              order reaches the right place.
+              Enter your six-digit PIN code to look up your location. Always
+              confirm the result before continuing.
             </p>
 
             <div className="checkout-benefit">
               <span>✓</span>
               <div>
-                <strong>Accurate delivery</strong>
-                <small>Provide a complete address.</small>
+                <strong>PIN code lookup</strong>
+                <small>Automatically finds the postal district and state.</small>
               </div>
             </div>
 
             <div className="checkout-benefit">
               <span>✓</span>
               <div>
-                <strong>Correct contact number</strong>
-                <small>Use a number you can be reached on.</small>
+                <strong>Confirm your address</strong>
+                <small>Add your house, street and area for accurate delivery.</small>
               </div>
             </div>
 
             <div className="checkout-help-footer">
-              Need help? Contact the store before placing your order.
+              PIN lookup requires an internet connection. If it is unavailable,
+              you can enter your location manually.
             </div>
           </aside>
         </div>
@@ -249,39 +506,50 @@ export default function CheckoutPage() {
         © {new Date().getFullYear()} BrainTech Store
       </footer>
 
-      <style jsx>{`
+      <style>{`
         .checkout-page {
-  min-height: 100vh;
-  background: #f5f7fb;
-  color: #172033;
-  font-family: Arial, Helvetica, sans-serif;
-}ut-header {
-          height: 76px;
-          padding: 0 clamp(18px, 5vw, 76px);
+          min-height: 100vh;
+          background: #f5f7fb;
+          color: #172033;
+          font-family: Arial, Helvetica, sans-serif;
+          box-sizing: border-box;
+        }
+
+        .checkout-page *,
+        .checkout-page *::before,
+        .checkout-page *::after {
+          box-sizing: border-box;
+        }
+
+        .checkout-header {
+          min-height: 76px;
+          padding: 14px clamp(18px, 5vw, 76px);
           display: flex;
           align-items: center;
           justify-content: space-between;
-          background: #0e1421;
-          border-bottom: 1px solid #222c3e;
+          gap: 16px;
+          background: #ffffff;
+          border-bottom: 1px solid #e5e7eb;
         }
 
         .checkout-brand {
           display: flex;
           align-items: center;
           gap: 11px;
-          color: inherit;
+          color: #172033;
           text-decoration: none;
         }
 
         .checkout-brand-icon {
           display: grid;
           place-items: center;
+          flex-shrink: 0;
           width: 42px;
           height: 42px;
           border-radius: 12px;
-          background: linear-gradient(135deg, #20c5f5, #635bff);
+          background: linear-gradient(135deg, #ef233c, #c8102e);
+          color: #ffffff;
           font-weight: 900;
-          color: #fff;
         }
 
         .checkout-brand strong,
@@ -296,19 +564,20 @@ export default function CheckoutPage() {
 
         .checkout-brand small {
           margin-top: 3px;
-          color: #8d9ab0;
+          color: #687386;
           font-size: 10px;
           letter-spacing: 3px;
         }
 
         .checkout-secure {
-          color: #b9c5d8;
+          color: #566174;
           font-size: 13px;
+          white-space: nowrap;
         }
 
         .checkout-secure span {
-          color: #42dba1;
           margin-right: 7px;
+          color: #16a36a;
         }
 
         .checkout-container {
@@ -319,24 +588,24 @@ export default function CheckoutPage() {
 
         .checkout-breadcrumb {
           display: flex;
-          gap: 10px;
           flex-wrap: wrap;
-          color: #8492a8;
-          font-size: 13px;
+          gap: 10px;
           margin-bottom: 32px;
+          color: #687386;
+          font-size: 13px;
         }
 
         .checkout-breadcrumb a {
-          color: #aab8cc;
+          color: #626f82;
           text-decoration: none;
         }
 
         .checkout-breadcrumb a:hover {
-          color: #36c8f4;
+          color: #d7193f;
         }
 
         .checkout-breadcrumb strong {
-          color: #f4f6fb;
+          color: #172033;
         }
 
         .checkout-heading {
@@ -348,7 +617,7 @@ export default function CheckoutPage() {
         }
 
         .checkout-eyebrow {
-          color: #37c8f3;
+          color: #d7193f;
           font-size: 11px;
           font-weight: 800;
           letter-spacing: 2px;
@@ -356,6 +625,7 @@ export default function CheckoutPage() {
 
         .checkout-heading h1 {
           margin: 9px 0;
+          color: #172033;
           font-size: clamp(26px, 4vw, 36px);
           line-height: 1.2;
           letter-spacing: -1px;
@@ -363,7 +633,7 @@ export default function CheckoutPage() {
 
         .checkout-heading p {
           margin: 0;
-          color: #9aa8bc;
+          color: #647084;
           line-height: 1.6;
           font-size: 14px;
         }
@@ -371,9 +641,10 @@ export default function CheckoutPage() {
         .checkout-step {
           flex-shrink: 0;
           padding: 9px 12px;
-          border: 1px solid #2b3c54;
+          border: 1px solid #e0e5ed;
           border-radius: 8px;
-          color: #a9bad1;
+          background: #ffffff;
+          color: #596579;
           font-size: 11px;
           font-weight: 700;
           letter-spacing: 1px;
@@ -388,44 +659,48 @@ export default function CheckoutPage() {
 
         .checkout-form-card,
         .checkout-help-card {
-          background: #101725;
-          border: 1px solid #263247;
-          border-radius: 16px;
+          min-width: 0;
           padding: clamp(20px, 3vw, 30px);
+          border: 1px solid #e3e7ee;
+          border-radius: 16px;
+          background: #ffffff;
+          box-shadow: 0 5px 22px rgba(25, 35, 55, 0.05);
         }
 
         .checkout-card-heading {
           display: flex;
-          gap: 13px;
           align-items: center;
+          gap: 13px;
           margin-bottom: 27px;
         }
 
         .checkout-heading-icon {
           display: grid;
           place-items: center;
+          flex-shrink: 0;
           width: 44px;
           height: 44px;
           border-radius: 12px;
-          color: #37c8f3;
-          background: #132b3b;
+          background: #fff0f2;
+          color: #d7193f;
           font-size: 27px;
         }
 
         .checkout-card-heading h2 {
           margin: 0 0 6px;
+          color: #172033;
           font-size: 20px;
         }
 
         .checkout-card-heading p {
           margin: 0;
-          color: #92a0b5;
+          color: #687386;
           font-size: 12px;
         }
 
         .checkout-fields {
           display: grid;
-          grid-template-columns: 1fr 1fr;
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
           gap: 20px 16px;
         }
 
@@ -440,94 +715,143 @@ export default function CheckoutPage() {
         .checkout-field label {
           display: block;
           margin-bottom: 9px;
-          color: #d9e2ef;
+          color: #303b4e;
           font-size: 13px;
           font-weight: 600;
         }
 
         .checkout-field label span {
-          color: #38c9f4;
+          color: #d7193f;
         }
 
-        .checkout-field input {
+        .checkout-field input,
+        .checkout-field select {
           display: block;
-          box-sizing: border-box;
           width: 100%;
           min-height: 47px;
           padding: 12px 13px;
-          border: 1px solid #34435a;
+          border: 1px solid #d6dce6;
           border-radius: 9px;
           outline: none;
-          background: #0b111c;
-          color: #f5f7fb;
+          background: #ffffff;
+          color: #172033;
+          font-family: inherit;
           font-size: 14px;
           transition: border-color 0.2s, box-shadow 0.2s;
         }
 
-        .checkout-field input::placeholder {
-          color: #68778d;
+        .checkout-field select {
+          cursor: pointer;
         }
 
-        .checkout-field input:focus {
-          border-color: #32bde9;
-          box-shadow: 0 0 0 3px #32bde91a;
+        .checkout-field input::placeholder {
+          color: #929bad;
+        }
+
+        .checkout-field input:focus,
+        .checkout-field select:focus {
+          border-color: #e11d48;
+          box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.1);
+        }
+
+        .checkout-pin-message {
+          display: flex;
+          align-items: flex-start;
+          gap: 5px;
+          margin: 9px 0 0;
+          font-size: 12px;
+          line-height: 1.55;
+        }
+
+        .checkout-pin-loading {
+          color: #475569;
+        }
+
+        .checkout-pin-success {
+          color: #15803d;
+        }
+
+        .checkout-pin-error {
+          color: #b45309;
+        }
+
+        .checkout-pin-spinner {
+          width: 13px;
+          height: 13px;
+          flex-shrink: 0;
+          margin-top: 1px;
+          border: 2px solid #cbd5e1;
+          border-top-color: #475569;
+          border-radius: 50%;
+          animation: checkout-pin-spin 0.7s linear infinite;
+        }
+
+        @keyframes checkout-pin-spin {
+          to { transform: rotate(360deg); }
         }
 
         .checkout-error {
           margin-top: 20px;
           padding: 12px 14px;
-          border: 1px solid #873f4c;
+          border: 1px solid #fecdd3;
           border-radius: 8px;
-          background: #351a24;
-          color: #ffb8c2;
+          background: #fff1f2;
+          color: #be123c;
           font-size: 13px;
           line-height: 1.5;
         }
 
         .checkout-form-note {
           display: flex;
+          align-items: flex-start;
           gap: 9px;
           margin-top: 23px;
-          color: #8f9fb5;
+          color: #687386;
           font-size: 12px;
           line-height: 1.6;
         }
 
         .checkout-form-actions {
           display: flex;
-          justify-content: space-between;
           align-items: center;
+          justify-content: space-between;
           gap: 12px;
           margin-top: 27px;
           padding-top: 22px;
-          border-top: 1px solid #263247;
+          border-top: 1px solid #e5e7eb;
         }
 
         .checkout-back-button,
         .checkout-continue-button {
           display: inline-flex;
-          justify-content: center;
           align-items: center;
+          justify-content: center;
           min-height: 46px;
           padding: 0 17px;
           border-radius: 9px;
+          font-family: inherit;
           font-size: 13px;
           font-weight: 700;
+          text-align: center;
           text-decoration: none;
           cursor: pointer;
           transition: transform 0.2s, background 0.2s;
         }
 
         .checkout-back-button {
-          border: 1px solid #35435a;
-          color: #d3deed;
-          background: transparent;
+          border: 1px solid #d6dce6;
+          background: #ffffff;
+          color: #374151;
         }
 
         .checkout-continue-button {
           border: 0;
-          color: #07111b;
-          background: linear-gradient(100deg, #38d2f2, #69a6ff);
+          background: #e31837;
+          color: #ffffff;
+        }
+
+        .checkout-continue-button:hover {
+          background: #c8102e;
         }
 
         .checkout-continue-button:hover,
@@ -540,6 +864,12 @@ export default function CheckoutPage() {
           cursor: wait;
         }
 
+        .checkout-back-button:focus-visible,
+        .checkout-continue-button:focus-visible {
+          outline: 3px solid rgba(225, 29, 72, 0.25);
+          outline-offset: 3px;
+        }
+
         .checkout-help-card {
           padding: 25px;
         }
@@ -550,26 +880,27 @@ export default function CheckoutPage() {
           width: 51px;
           height: 51px;
           border-radius: 14px;
-          background: #172a3b;
+          background: #fff0f2;
           font-size: 25px;
         }
 
         .checkout-help-card h3 {
           margin: 19px 0 10px;
+          color: #172033;
           font-size: 19px;
         }
 
         .checkout-help-card > p {
           margin: 0;
-          color: #96a5ba;
+          color: #687386;
           font-size: 13px;
           line-height: 1.8;
         }
 
         .checkout-benefit {
           display: flex;
-          gap: 11px;
           align-items: flex-start;
+          gap: 11px;
           margin-top: 23px;
         }
 
@@ -580,8 +911,8 @@ export default function CheckoutPage() {
           width: 24px;
           height: 24px;
           border-radius: 50%;
-          background: #153b34;
-          color: #52e2ae;
+          background: #e6f7ef;
+          color: #16845a;
           font-size: 13px;
         }
 
@@ -592,11 +923,12 @@ export default function CheckoutPage() {
 
         .checkout-benefit strong {
           margin: 2px 0 5px;
+          color: #263247;
           font-size: 12px;
         }
 
         .checkout-benefit small {
-          color: #8998ad;
+          color: #687386;
           font-size: 11px;
           line-height: 1.5;
         }
@@ -604,23 +936,24 @@ export default function CheckoutPage() {
         .checkout-help-footer {
           margin-top: 25px;
           padding-top: 18px;
-          border-top: 1px solid #293448;
-          color: #8998ad;
+          border-top: 1px solid #e5e7eb;
+          color: #687386;
           font-size: 11px;
           line-height: 1.7;
         }
 
         .checkout-footer {
           padding: 23px 18px;
-          border-top: 1px solid #222c3e;
-          color: #7f8da2;
+          border-top: 1px solid #e5e7eb;
+          background: #ffffff;
+          color: #687386;
           text-align: center;
           font-size: 12px;
         }
 
         @media (max-width: 760px) {
           .checkout-layout {
-            grid-template-columns: 1fr;
+            grid-template-columns: minmax(0, 1fr);
           }
 
           .checkout-help-card {
@@ -630,11 +963,23 @@ export default function CheckoutPage() {
 
         @media (max-width: 500px) {
           .checkout-header {
-            height: 66px;
+            min-height: 66px;
+          }
+
+          .checkout-brand strong {
+            font-size: 17px;
+          }
+
+          .checkout-secure {
+            font-size: 11px;
           }
 
           .checkout-container {
             padding-top: 22px;
+          }
+
+          .checkout-breadcrumb {
+            margin-bottom: 24px;
           }
 
           .checkout-heading {
@@ -643,7 +988,7 @@ export default function CheckoutPage() {
           }
 
           .checkout-fields {
-            grid-template-columns: 1fr;
+            grid-template-columns: minmax(0, 1fr);
           }
 
           .checkout-field-address {
@@ -658,176 +1003,8 @@ export default function CheckoutPage() {
           .checkout-back-button,
           .checkout-continue-button {
             width: 100%;
-            box-sizing: border-box;
           }
         }
-          
-/* Light theme overrides */
-.checkout-page {
-  background: #f5f7fb;
-  color: #172033;
-}
-
-.checkout-header {
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.checkout-brand {
-  color: #172033;
-}
-
-.checkout-brand-icon {
-  background: linear-gradient(135deg, #ef233c, #c8102e);
-}
-
-.checkout-brand small {
-  color: #687386;
-}
-
-.checkout-secure {
-  color: #566174;
-}
-
-.checkout-container {
-  color: #172033;
-}
-
-.checkout-breadcrumb {
-  color: #687386;
-}
-
-.checkout-breadcrumb a {
-  color: #626f82;
-}
-
-.checkout-breadcrumb strong {
-  color: #172033;
-}
-
-.checkout-heading h1 {
-  color: #172033;
-}
-
-.checkout-heading p {
-  color: #647084;
-}
-
-.checkout-step {
-  background: #ffffff;
-  border-color: #e0e5ed;
-  color: #596579;
-}
-
-.checkout-form-card,
-.checkout-help-card {
-  background: #ffffff;
-  border-color: #e3e7ee;
-  box-shadow: 0 5px 22px rgba(25, 35, 55, 0.05);
-}
-
-.checkout-heading-icon {
-  background: #fff0f2;
-  color: #d7193f;
-}
-
-.checkout-card-heading h2,
-.checkout-help-card h3 {
-  color: #172033;
-}
-
-.checkout-card-heading p,
-.checkout-help-card > p {
-  color: #687386;
-}
-
-.checkout-field label {
-  color: #303b4e;
-}
-
-.checkout-field label span {
-  color: #d7193f;
-}
-
-.checkout-field input {
-  background: #ffffff;
-  color: #172033;
-  border-color: #d6dce6;
-}
-
-.checkout-field input::placeholder {
-  color: #929bad;
-}
-
-.checkout-field input:focus {
-  border-color: #e11d48;
-  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.10);
-}
-
-.checkout-error {
-  background: #fff1f2;
-  border-color: #fecdd3;
-  color: #be123c;
-}
-
-.checkout-form-note {
-  color: #687386;
-}
-
-.checkout-form-actions {
-  border-top-color: #e5e7eb;
-}
-
-.checkout-back-button {
-  border-color: #d6dce6;
-  color: #374151;
-  background: #ffffff;
-}
-
-.checkout-back-button:hover {
-  background: #f5f6f9;
-}
-
-.checkout-continue-button {
-  background: #e31837;
-  color: #ffffff;
-}
-
-.checkout-continue-button:hover {
-  background: #c8102e;
-}
-
-.checkout-help-icon {
-  background: #fff0f2;
-}
-
-.checkout-benefit strong {
-  color: #263247;
-}
-
-.checkout-benefit small {
-  color: #687386;
-}
-
-.checkout-help-footer {
-  border-top-color: #e5e7eb;
-  color: #687386;
-}
-
-.checkout-footer {
-  background: #ffffff;
-  border-top-color: #e5e7eb;
-  color: #687386;
-}
-
-.checkout-brand-icon {
-  color: #ffffff;
-}
-
-.checkout-secure span {
-  color: #16a36a;
-}
-
       `}</style>
     </main>
   );
