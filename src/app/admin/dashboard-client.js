@@ -9,23 +9,23 @@ import "./admin.css";
 const stats = [
   {
     label: "Total revenue",
-    value: "â‚¹2,48,590",
+    value: "₹2,48,590",
     change: "+12.8%",
-    icon: "â‚¹",
+    icon: "₹",
     tone: "purple",
   },
   {
     label: "Total orders",
     value: "1,284",
     change: "+8.2%",
-    icon: "â–¤",
+    icon: "◆",
     tone: "blue",
   },
   {
     label: "Total products",
     value: "356",
     change: "+4 new",
-    icon: "â–¦",
+    icon: "●",
     tone: "orange",
   },
   {
@@ -42,66 +42,66 @@ const orders = [
     id: "#BT-10842",
     customer: "Rahul Sharma",
     date: "21 Oct 2026",
-    amount: "â‚¹74,999",
+    amount: "₹74,999",
     status: "Processing",
   },
   {
     id: "#BT-10841",
     customer: "Priya Patel",
     date: "21 Oct 2026",
-    amount: "â‚¹18,499",
+    amount: "₹18,499",
     status: "Delivered",
   },
   {
     id: "#BT-10840",
     customer: "Aarav Mehta",
     date: "20 Oct 2026",
-    amount: "â‚¹1,24,990",
+    amount: "₹1,24,990",
     status: "Pending",
   },
   {
     id: "#BT-10839",
     customer: "Sneha Joshi",
     date: "20 Oct 2026",
-    amount: "â‚¹8,999",
+    amount: "₹8,999",
     status: "Delivered",
   },
   {
     id: "#BT-10838",
     customer: "Karan Singh",
     date: "19 Oct 2026",
-    amount: "â‚¹32,499",
+    amount: "₹32,499",
     status: "Cancelled",
   },
 ];
 
 const products = [
   {
-    name: "Gaming PC â€” RTX Series",
+    name: "Gaming PC — RTX Series",
     category: "Prebuilt PCs",
     stock: 8,
-    price: "â‚¹1,24,999",
+    price: "₹1,24,999",
     icon: "ðŸ–¥ï¸",
   },
   {
     name: "AMD Ryzen 7 Processor",
     category: "Processors",
     stock: 3,
-    price: "â‚¹28,499",
-    icon: "âš™ï¸",
+    price: "₹28,499",
+    icon: "⚙",
   },
   {
     name: "Mechanical Gaming Keyboard",
     category: "Peripherals",
     stock: 16,
-    price: "â‚¹6,499",
-    icon: "âŒ¨ï¸",
+    price: "₹6,499",
+    icon: "KEY",
   },
   {
     name: "GeForce RTX Graphics Card",
     category: "Graphics Cards",
     stock: 2,
-    price: "â‚¹64,999",
+    price: "₹64,999",
     icon: "ðŸŽ®",
   },
 ];
@@ -112,12 +112,12 @@ const navGroups = [
     items: [
       {
         label: "Dashboard",
-        icon: "â–¦",
+        icon: "●",
         href: "/admin",
       },
       {
         label: "Analytics",
-        icon: "â–¥",
+        icon: "■",
         href: "/admin/analytics",
       },
     ],
@@ -127,22 +127,22 @@ const navGroups = [
     items: [
       {
         label: "Products",
-        icon: "â–£",
+        icon: "▲",
         href: "/admin/products",
       },
       {
         label: "Orders",
-        icon: "â–¤",
+        icon: "◆",
         href: "/admin/orders",
       },
       {
         label: "Inventory",
-        icon: "â–§",
+        icon: "▣",
         href: "/admin/inventory",
       },
       {
         label: "Customers",
-        icon: "â™™",
+        icon: "♟",
         href: "/admin/customers",
       },
       {
@@ -157,12 +157,12 @@ const navGroups = [
     items: [
       {
         label: "Homepage banners",
-        icon: "â–¤",
+        icon: "◆",
         href: "/admin/homepage-banner",
       },
       {
         label: "Settings",
-        icon: "âš™",
+        icon: "⚙",
         href: "/admin/settings",
       },
     ],
@@ -395,19 +395,19 @@ const [revenuePeriod, setRevenuePeriod] = useState("12months");
 
         <div className="sidebar-bottom">
           <div className="support-card">
-            <span className="support-symbol">âœ¦</span>
+            <span className="support-symbol">✦</span>
 
             <strong>Need assistance?</strong>
 
             <p>Store management help and support.</p>
 
             <a href="mailto:support@braintechpc.in">
-              Contact support â†—
+              Contact support ↗
             </a>
           </div>
 
           <Link href="/" className="back-to-store">
-            <span>â†—</span> View customer store
+            <span>↗</span> View customer store
           </Link>
         </div>
       </aside>
@@ -436,7 +436,7 @@ const [revenuePeriod, setRevenuePeriod] = useState("12months");
                 )
               }
             >
-              â™§ <i />
+              ♧ <i />
             </button>
 
             <div className="admin-profile">
@@ -458,7 +458,7 @@ const [revenuePeriod, setRevenuePeriod] = useState("12months");
                 disabled={loggingOut}
                 onClick={handleLogout}
               >
-                {loggingOut ? "..." : "â†ª"}
+                {loggingOut ? "..." : "↪"}
               </button>
             </div>
           </div>
@@ -470,7 +470,7 @@ const [revenuePeriod, setRevenuePeriod] = useState("12months");
               <p className="eyebrow">STORE OVERVIEW</p>
 
               <h1>
-                Dashboard <span className="wave">âœ¦</span>
+                Dashboard <span className="wave">✦</span>
               </h1>
 
               <p className="dashboard-subtitle">
@@ -572,14 +572,14 @@ const [revenuePeriod, setRevenuePeriod] = useState("12months");
     URL.revokeObjectURL(url);
   }}
 >
-  <span>â†“</span> Export report
+  <span>↓</span> Export report
 </button>
 
           </div>
 
 
 <div className="demo-banner">
-  <span className="demo-banner-icon">âœ“</span>
+  <span className="demo-banner-icon">✓</span>
 
   <div>
     <strong>Live store data connected</strong>
@@ -601,9 +601,9 @@ const [revenuePeriod, setRevenuePeriod] = useState("12months");
         ? "Loading..."
         : dashboardError
           ? "Unavailable"
-          : `â‚¹${Number(dashboardData?.stats?.total_revenue || 0).toLocaleString("en-IN")}`,
+          : `₹${Number(dashboardData?.stats?.total_revenue || 0).toLocaleString("en-IN")}`,
       change: "Confirmed payments only",
-      icon: "â‚¹",
+      icon: "₹",
       tone: "purple",
     },
     {
@@ -614,7 +614,7 @@ const [revenuePeriod, setRevenuePeriod] = useState("12months");
           ? "Unavailable"
           : Number(dashboardData?.stats?.total_orders || 0).toLocaleString("en-IN"),
       change: "All order records",
-      icon: "â–¤",
+      icon: "◆",
       tone: "blue",
     },
     {
@@ -625,7 +625,7 @@ const [revenuePeriod, setRevenuePeriod] = useState("12months");
           ? "Unavailable"
           : Number(dashboardData?.stats?.total_products || 0).toLocaleString("en-IN"),
       change: "Active products",
-      icon: "â–¦",
+      icon: "●",
       tone: "orange",
     },
     {
@@ -688,7 +688,7 @@ const [revenuePeriod, setRevenuePeriod] = useState("12months");
         ? "Loading..."
         : dashboardError
           ? "Unavailable"
-          : `â‚¹${Number(
+          : `₹${Number(
               dashboardData?.stats?.total_revenue || 0
             ).toLocaleString("en-IN")}`}
     </strong>
@@ -743,7 +743,7 @@ const [revenuePeriod, setRevenuePeriod] = useState("12months");
               }}
             >
               <strong>
-                â‚¹{Number(item.revenue || 0).toLocaleString("en-IN")}
+                ₹{Number(item.revenue || 0).toLocaleString("en-IN")}
               </strong>
 
               <div
@@ -776,7 +776,7 @@ const [revenuePeriod, setRevenuePeriod] = useState("12months");
       <p>Current order status</p>
     </div>
 
-    <span className="panel-menu">Â·Â·Â·</span>
+    <span className="panel-menu">...</span>
   </div>
 
   <div className="order-donut-wrap">
@@ -786,7 +786,7 @@ const [revenuePeriod, setRevenuePeriod] = useState("12months");
           {dashboardLoading
             ? "..."
             : dashboardError
-              ? "â€”"
+              ? "—"
               : Number(dashboardData?.stats?.total_orders || 0)}
         </strong>
 
@@ -841,7 +841,7 @@ const [revenuePeriod, setRevenuePeriod] = useState("12months");
     </div>
 
     <Link href="/admin/orders" className="text-link">
-      View all orders â†’
+      View all orders →
     </Link>
   </div>
 
@@ -887,7 +887,7 @@ const [revenuePeriod, setRevenuePeriod] = useState("12months");
                   month: "short",
                   year: "numeric",
                 })
-              : "â€”";
+              : "—";
 
             return (
               <tr key={order.id}>
@@ -902,7 +902,7 @@ const [revenuePeriod, setRevenuePeriod] = useState("12months");
                 </td>
 
                 <td className="amount-cell">
-                  â‚¹{Number(order.total || 0).toLocaleString("en-IN")}
+                  ₹{Number(order.total || 0).toLocaleString("en-IN")}
                 </td>
 
                 <td>
@@ -919,7 +919,7 @@ const [revenuePeriod, setRevenuePeriod] = useState("12months");
                     aria-label={`View order ${order.order_number}`}
                     onClick={() => router.push("/admin/orders")}
                   >
-                    â†—
+                    ↗
                   </button>
                 </td>
               </tr>
@@ -944,7 +944,7 @@ const [revenuePeriod, setRevenuePeriod] = useState("12months");
       href="/admin/inventory"
       className="text-link"
     >
-      Manage inventory â†’
+      Manage inventory →
     </Link>
   </div>
 
@@ -977,7 +977,7 @@ const [revenuePeriod, setRevenuePeriod] = useState("12months");
           </div>
 
           <div className="inventory-price">
-            â‚¹{Number(product.price).toLocaleString("en-IN")}
+            ₹{Number(product.price).toLocaleString("en-IN")}
           </div>
 
           <div
@@ -996,7 +996,7 @@ const [revenuePeriod, setRevenuePeriod] = useState("12months");
             className="table-action"
             aria-label={`Manage ${product.name}`}
           >
-            â†’
+            →
           </Link>
         </div>
       ))
@@ -1007,10 +1007,10 @@ const [revenuePeriod, setRevenuePeriod] = useState("12months");
 
 
 <footer className="admin-footer">
-  <span>Â© 2026 BrainTech Store Admin</span>
+  <span>© 2026 BrainTech Store Admin</span>
 
   <span>
-    Live database connected Â· Admin panel
+    Live database connected · Admin panel
   </span>
 </footer>
 
@@ -1019,3 +1019,4 @@ const [revenuePeriod, setRevenuePeriod] = useState("12months");
     </main>
   );
 }
+
