@@ -4,8 +4,14 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useCart } from "@/context/CartContext";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 export default function CartPage() {
+  const router = useRouter();
+const [supabase] = useState(() => createClient());
+const [checkingLogin, setCheckingLogin] = useState(false);
   const {
     cart,
     cartCount,
@@ -26,9 +32,33 @@ export default function CartPage() {
     minHeight: "100vh",
     fontFamily: "Arial, Helvetica, sans-serif",
   };
+  async function handleCheckout() {
+  if (checkingLogin) return;
+
+  setCheckingLogin(true);
+
+  try {
+    const { data, error } = await supabase.auth.getSession();
+
+    if (error) {
+      throw error;
+    }
+
+    if (data.session) {
+      router.push("/checkout");
+    } else {
+      setShowLoginPopup(true);
+    }
+  } catch (error) {
+    console.error("Unable to check login status:", error);
+    setShowLoginPopup(true);
+  } finally {
+    setCheckingLogin(false);
+  }
+}
 
   if (!loaded) {
-    return (
+return (
       <main className="cart-page cart-light-page" style={lightPageStyle}>
         <div className="cart-loading">Loading your cart...</div>
 
@@ -199,7 +229,8 @@ export default function CartPage() {
               <button
                 type="button"
                 className="cart-primary-button cart-checkout-button"
-                onClick={() => setShowLoginPopup(true)}
+                onClick={handleCheckout}
+                disabled={checkingLogin}
               >
                 Proceed to checkout <span>→</span>
               </button>
@@ -233,32 +264,38 @@ export default function CartPage() {
               ×
             </button>
 
-            <div className="login-popup-icon" aria-hidden="true">
-              🔐
-            </div>
+           <div className="login-popup-icon" aria-hidden="true">
+  🔐
+</div>
 
-            <h2 id="login-popup-title">Please log in first</h2>
+<h2 id="login-popup-title">Please log in first</h2>
 
-            <p>
-              Please sign in to your BrainTech account before
-              proceeding to checkout.
-            </p>
+<p>
+  Please sign in to your BrainTech account before
+  proceeding to checkout.
+</p>
 
-            <Link href="/login" className="cart-primary-button popup-link">
-              Sign In →
-            </Link>
+<Link
+  href="/login?next=%2Fcheckout"
+  className="cart-primary-button popup-link"
+>
+  Sign In →
+</Link>
 
-            <Link href="/register" className="popup-register-link">
-              Create Account
-            </Link>
+<Link
+  href="/register?next=%2Fcheckout"
+  className="popup-register-link"
+>
+  Create Account
+</Link>
 
-            <button
-              type="button"
-              className="popup-cancel"
-              onClick={() => setShowLoginPopup(false)}
-            >
-              Continue shopping
-            </button>
+    <button
+  type="button"
+  className="popup-continue-button"
+  onClick={() => setShowLoginPopup(false)}
+>
+  Continue shopping
+</button>
           </div>
         </div>
       )}
@@ -779,6 +816,26 @@ export default function CartPage() {
         .popup-cancel:hover {
           color: #d7193f;
         }
+          .popup-continue-button {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #687386;
+  font-family: inherit;
+  font-size: 13px;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.popup-continue-button:hover {
+  background: #f5f7fb;
+  color: #d7193f;
+}
 
         @media (max-width: 850px) {
           .cart-layout {

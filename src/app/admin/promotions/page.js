@@ -4,56 +4,20 @@
 import { useEffect, useMemo, useState } from "react";
 import "../admin.css";
 
-const STORAGE_KEY = "braintech-admin-promotions-v1";
-
-const INITIAL_PROMOTIONS = [
-  {
-    id: "PROMO-1001",
-    code: "WELCOME10",
-    name: "Welcome Offer",
-    type: "Percentage",
-    value: 10,
-    minimum: 1000,
-    usageLimit: 500,
-    used: 42,
-    startDate: "2026-10-01",
-    endDate: "2026-12-31",
-    status: "Active",
-  },
-  {
-    id: "PROMO-1002",
-    code: "GAMING500",
-    name: "Gaming Gear Discount",
-    type: "Fixed amount",
-    value: 500,
-    minimum: 5000,
-    usageLimit: 200,
-    used: 28,
-    startDate: "2026-10-01",
-    endDate: "2026-11-30",
-    status: "Active",
-  },
-  {
-    id: "PROMO-1003",
-    code: "FESTIVE15",
-    name: "Festive Sale",
-    type: "Percentage",
-    value: 15,
-    minimum: 10000,
-    usageLimit: 100,
-    used: 100,
-    startDate: "2026-09-01",
-    endDate: "2026-10-15",
-    status: "Expired",
-  },
-];
-
 const formatPrice = (amount) =>
   new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
     maximumFractionDigits: 0,
   }).format(Number(amount) || 0);
+
+function getToday() {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 function getInitialForm() {
   return {
@@ -63,61 +27,105 @@ function getInitialForm() {
     value: "10",
     minimum: "0",
     usageLimit: "100",
-    startDate: new Date().toISOString().slice(0, 10),
+    startDate: getToday(),
     endDate: "",
   };
 }
 
-function getEffectiveStatus(promo) {
-  if (promo.status === "Disabled") return "Disabled";
-
-  const today = new Date().toISOString().slice(0, 10);
-
-  if (promo.endDate && promo.endDate < today) return "Expired";
-  if (promo.startDate && promo.startDate > today) return "Scheduled";
-  if (
-    Number(promo.usageLimit) > 0 &&
-    Number(promo.used) >= Number(promo.usageLimit)
-  ) {
-    return "Used up";
-  }
-
-  return "Active";
+function normalizePromotion(promo) {
+  return {
+    ...promo,
+    id: Number(promo.id),
+    code: promo.code || "",
+    name: promo.name || promo.description || "",
+    type: promo.type || "Percentage",
+    value: Number(promo.value || 0),
+    minimum: Number(promo.minimumOrder ?? promo.minimum_order_amount ?? 0),
+    usageLimit:
+      promo.usageLimit == null
+        ? 0
+        : Number(promo.usageLimit),
+    used: Number(promo.used ?? promo.usage_count ?? 0),
+    redemptionCount: Number(promo.redemption_count || 0),
+    startDate: promo.startDate || "",
+    endDate: promo.endDate || "",
+    is_active: Number(promo.is_active) === 1,
+    status:
+      promo.status === "Limit reached"
+        ? "Used up"
+        : promo.status || "Active",
+  };
 }
 
 export default function PromotionsPage() {
   const [promotions, setPromotions] = useState([]);
   const [loaded, setLoaded] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [actionId, setActionId] = useState(null);
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [notice, setNotice] = useState("");
+  const [noticeError, setNoticeError] = useState(false);
   const [form, setForm] = useState(getInitialForm);
 
-  useEffect(() => {
+  async function apiRequest(method = "GET", payload = null) {
+    const token = localStorage.getItem("braintech-admin-token");
+
+    if (!token) {
+      throw new Error("Admin session not found. Please log in again.");
+    }
+
+    const response = await fetch("/api/admin/promotions", {
+      method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+        ...(payload ? { "Content-Type": "application/json" } : {}),
+      },
+      ...(payload ? { body: JSON.stringify(payload) } : {}),
+      cache: "no-store",
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || "Something went wrong.");
+    }
+
+    return data;
+  }
+
+  function showMessage(message, isError = false) {
+    setNotice(message);
+    setNoticeError(isError);
+  }
+
+  async function loadPromotions() {
+    setLoading(true);
+
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      setPromotions(saved ? JSON.parse(saved) : INITIAL_PROMOTIONS);
+      const data = await apiRequest("GET");
+      setPromotions(
+        Array.isArray(data.promotions)
+          ? data.promotions.map(normalizePromotion)
+          : []
+      );
     } catch (error) {
       console.error("Could not load promotions:", error);
-      setPromotions(INITIAL_PROMOTIONS);
-    }
-
-    setLoaded(true);
-  }, []);
-
-  function persistPromotions(nextPromotions, message) {
-    setPromotions(nextPromotions);
-
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(nextPromotions));
-      setNotice(message);
-    } catch (error) {
-      console.error("Could not save promotions:", error);
-      setNotice("Could not save changes. Browser storage may be full.");
+      showMessage(error.message, true);
+    } finally {
+      setLoading(false);
+      setLoaded(true);
     }
   }
+
+  useEffect(() => {
+    loadPromotions();
+  }, []);
 
   const filteredPromotions = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -125,24 +133,22 @@ export default function PromotionsPage() {
     return promotions.filter((promo) => {
       const matchesSearch =
         !query ||
-        String(promo.code).toLowerCase().includes(query) ||
-        String(promo.name).toLowerCase().includes(query);
-
-      const status = getEffectiveStatus(promo);
+        promo.code.toLowerCase().includes(query) ||
+        promo.name.toLowerCase().includes(query);
 
       return (
         matchesSearch &&
-        (statusFilter === "All" || status === statusFilter)
+        (statusFilter === "All" || promo.status === statusFilter)
       );
     });
   }, [promotions, search, statusFilter]);
 
   const activeCount = promotions.filter(
-    (promo) => getEffectiveStatus(promo) === "Active"
+    (promo) => promo.status === "Active"
   ).length;
 
   const totalUses = promotions.reduce(
-    (sum, promo) => sum + Number(promo.used || 0),
+    (sum, promo) => sum + promo.redemptionCount,
     0
   );
 
@@ -159,26 +165,28 @@ export default function PromotionsPage() {
     setEditingId(null);
     setForm(getInitialForm());
     setShowForm(true);
-    setNotice("");
+    showMessage("");
   }
 
   function editPromotion(promo) {
     setEditingId(promo.id);
+
     setForm({
-      code: promo.code || "",
-      name: promo.name || "",
-      type: promo.type || "Percentage",
-      value: String(promo.value ?? 10),
-      minimum: String(promo.minimum ?? 0),
-      usageLimit: String(promo.usageLimit ?? 100),
-      startDate: promo.startDate || "",
-      endDate: promo.endDate || "",
+      code: promo.code,
+      name: promo.name,
+      type: promo.type,
+      value: String(promo.value),
+      minimum: String(promo.minimum),
+      usageLimit: String(promo.usageLimit),
+      startDate: promo.startDate,
+      endDate: promo.endDate,
     });
+
     setShowForm(true);
-    setNotice("");
+    showMessage("");
   }
 
-  function savePromotion(event) {
+  async function savePromotion(event) {
     event.preventDefault();
 
     const code = form.code.trim().toUpperCase();
@@ -188,30 +196,36 @@ export default function PromotionsPage() {
     const usageLimit = Number(form.usageLimit);
 
     if (!code || !name) {
-      setNotice("Enter a promotion name and discount code.");
+      showMessage("Enter a promotion name and discount code.", true);
+      return;
+    }
+
+    if (!/^[A-Z0-9_-]{2,80}$/.test(code)) {
+      showMessage(
+        "Use 2–80 letters, numbers, hyphens or underscores for the code.",
+        true
+      );
       return;
     }
 
     if (
       promotions.some(
         (promo) =>
-          promo.code.toUpperCase() === code && promo.id !== editingId
+          promo.code.toUpperCase() === code &&
+          promo.id !== editingId
       )
     ) {
-      setNotice("That discount code already exists.");
+      showMessage("That discount code already exists.", true);
       return;
     }
 
     if (!Number.isFinite(value) || value <= 0) {
-      setNotice("Discount value must be greater than zero.");
+      showMessage("Discount value must be greater than zero.", true);
       return;
     }
 
-    if (
-      form.type === "Percentage" &&
-      value > 100
-    ) {
-      setNotice("Percentage discount cannot exceed 100%.");
+    if (form.type === "Percentage" && value > 100) {
+      showMessage("Percentage discount cannot exceed 100%.", true);
       return;
     }
 
@@ -221,7 +235,7 @@ export default function PromotionsPage() {
       !Number.isInteger(usageLimit) ||
       usageLimit < 0
     ) {
-      setNotice("Check the minimum order amount and usage limit.");
+      showMessage("Check the minimum order amount and usage limit.", true);
       return;
     }
 
@@ -230,68 +244,110 @@ export default function PromotionsPage() {
       form.endDate &&
       form.endDate < form.startDate
     ) {
-      setNotice("End date cannot be earlier than the start date.");
+      showMessage("End date cannot be earlier than the start date.", true);
       return;
     }
 
-    const previous = promotions.find((promo) => promo.id === editingId);
+    const previous = promotions.find(
+      (promo) => promo.id === editingId
+    );
 
-    const nextPromo = {
-      id: editingId || `PROMO-${Date.now()}`,
+    const payload = {
       code,
       name,
       type: form.type,
       value,
-      minimum,
-      usageLimit,
-      used: previous?.used || 0,
-      startDate: form.startDate,
-      endDate: form.endDate,
-      status: previous?.status === "Disabled" ? "Disabled" : "Active",
+      minimumOrder: minimum,
+      usageLimit: usageLimit === 0 ? null : usageLimit,
+      startDate: form.startDate || null,
+      endDate: form.endDate || null,
+      is_active: previous ? previous.is_active : true,
     };
 
-    const nextPromotions = editingId
-      ? promotions.map((promo) =>
-          promo.id === editingId ? nextPromo : promo
-        )
-      : [nextPromo, ...promotions];
+    if (editingId !== null) {
+      payload.id = editingId;
+    }
 
-    persistPromotions(
-      nextPromotions,
-      editingId ? "Promotion updated." : "Promotion created."
-    );
+    setSaving(true);
 
-    setShowForm(false);
-    setEditingId(null);
-    setForm(getInitialForm());
+    try {
+      const result = await apiRequest(
+        editingId !== null ? "PUT" : "POST",
+        payload
+      );
+
+      await loadPromotions();
+
+      setShowForm(false);
+      setEditingId(null);
+      setForm(getInitialForm());
+
+      showMessage(
+        result.message ||
+          (editingId !== null
+            ? "Promotion updated successfully."
+            : "Promotion created successfully.")
+      );
+    } catch (error) {
+      console.error("Could not save promotion:", error);
+      showMessage(error.message, true);
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function togglePromotion(promo) {
-    const currentStatus = getEffectiveStatus(promo);
-    const nextStatus =
-      currentStatus === "Disabled" ? "Active" : "Disabled";
+  async function togglePromotion(promo) {
+    const nextActive = !promo.is_active;
 
-    const next = promotions.map((item) =>
-      item.id === promo.id ? { ...item, status: nextStatus } : item
-    );
+    setActionId(promo.id);
 
-    persistPromotions(
-      next,
-      `${promo.code} ${nextStatus.toLowerCase()}.`
-    );
+    try {
+      const result = await apiRequest("PUT", {
+        id: promo.id,
+        code: promo.code,
+        name: promo.name,
+        type: promo.type,
+        value: promo.value,
+        minimumOrder: promo.minimum,
+        usageLimit:
+          promo.usageLimit === 0 ? null : promo.usageLimit,
+        startDate: promo.startDate || null,
+        endDate: promo.endDate || null,
+        is_active: nextActive,
+      });
+
+      await loadPromotions();
+      showMessage(result.message || `${promo.code} updated successfully.`);
+    } catch (error) {
+      console.error("Could not update promotion:", error);
+      showMessage(error.message, true);
+    } finally {
+      setActionId(null);
+    }
   }
 
-  function deletePromotion(promo) {
+  async function deletePromotion(promo) {
     const confirmed = window.confirm(
       `Delete promotion ${promo.code}? This cannot be undone.`
     );
 
     if (!confirmed) return;
 
-    persistPromotions(
-      promotions.filter((item) => item.id !== promo.id),
-      `${promo.code} deleted.`
-    );
+    setActionId(promo.id);
+
+    try {
+      const result = await apiRequest("DELETE", {
+        id: promo.id,
+      });
+
+      await loadPromotions();
+      showMessage(result.message || `${promo.code} deleted successfully.`);
+    } catch (error) {
+      console.error("Could not delete promotion:", error);
+      showMessage(error.message, true);
+    } finally {
+      setActionId(null);
+    }
   }
 
   function exportPromotions() {
@@ -303,6 +359,7 @@ export default function PromotionsPage() {
       "Minimum Order",
       "Usage Limit",
       "Used",
+      "Redemptions",
       "Start Date",
       "End Date",
       "Status",
@@ -314,11 +371,12 @@ export default function PromotionsPage() {
       promo.type,
       promo.value,
       promo.minimum,
-      promo.usageLimit,
+      promo.usageLimit === 0 ? "Unlimited" : promo.usageLimit,
       promo.used,
+      promo.redemptionCount,
       promo.startDate,
       promo.endDate,
-      getEffectiveStatus(promo),
+      promo.status,
     ]);
 
     const quote = (value) =>
@@ -375,7 +433,11 @@ export default function PromotionsPage() {
       </header>
 
       {notice && (
-        <div className="promotions-notice" role="status">
+        <div
+          className="promotions-notice"
+          role="status"
+          style={noticeError ? { borderColor: "#dc5555" } : undefined}
+        >
           {notice}
         </div>
       )}
@@ -396,7 +458,7 @@ export default function PromotionsPage() {
         <article className="promotions-stat-card">
           <span>Total redemptions</span>
           <strong>{totalUses.toLocaleString("en-IN")}</strong>
-          <small>Sample recorded uses</small>
+          <small>Recorded coupon redemptions</small>
         </article>
 
         <article className="promotions-stat-card">
@@ -410,7 +472,7 @@ export default function PromotionsPage() {
         <form className="promotions-form" onSubmit={savePromotion}>
           <div className="promotions-form-heading">
             <div>
-              <h2>{editingId ? "Edit promotion" : "Create promotion"}</h2>
+              <h2>{editingId !== null ? "Edit promotion" : "Create promotion"}</h2>
               <p>Set the discount, minimum order, and validity period.</p>
             </div>
 
@@ -449,11 +511,7 @@ export default function PromotionsPage() {
 
             <label>
               Discount type
-              <select
-                name="type"
-                value={form.type}
-                onChange={changeForm}
-              >
+              <select name="type" value={form.type} onChange={changeForm}>
                 <option>Percentage</option>
                 <option>Fixed amount</option>
               </select>
@@ -529,14 +587,21 @@ export default function PromotionsPage() {
               type="button"
               className="promotions-secondary-button"
               onClick={() => setShowForm(false)}
+              disabled={saving}
             >
               Cancel
             </button>
+
             <button
               type="submit"
               className="promotions-primary-button"
+              disabled={saving}
             >
-              {editingId ? "Save changes" : "Create promotion"}
+              {saving
+                ? "Saving..."
+                : editingId !== null
+                  ? "Save changes"
+                  : "Create promotion"}
             </button>
           </div>
         </form>
@@ -589,18 +654,20 @@ export default function PromotionsPage() {
 
             <tbody>
               {filteredPromotions.map((promo) => {
-                const status = getEffectiveStatus(promo);
-                const limit = Number(promo.usageLimit) || 0;
-                const used = Number(promo.used) || 0;
+                const limit = promo.usageLimit;
+                const used = promo.used;
+
                 const usagePercent =
-                  limit > 0 ? Math.min(100, (used / limit) * 100) : 0;
+                  limit > 0
+                    ? Math.min(100, (used / limit) * 100)
+                    : 0;
 
                 return (
                   <tr key={promo.id}>
                     <td>
                       <div className="promotions-name">
                         <strong>{promo.name}</strong>
-                        <small>{promo.id}</small>
+                        <small>#{promo.id}</small>
                       </div>
                     </td>
 
@@ -624,6 +691,7 @@ export default function PromotionsPage() {
                           <span>{used}</span>
                           <span>{limit > 0 ? limit : "Unlimited"}</span>
                         </div>
+
                         <div className="promotions-progress">
                           <span style={{ width: `${usagePercent}%` }} />
                         </div>
@@ -634,11 +702,11 @@ export default function PromotionsPage() {
 
                     <td>
                       <span
-                        className={`promotions-status ${status
+                        className={`promotions-status ${promo.status
                           .toLowerCase()
                           .replace(/\s+/g, "-")}`}
                       >
-                        {status}
+                        {promo.status}
                       </span>
                     </td>
 
@@ -648,6 +716,7 @@ export default function PromotionsPage() {
                           type="button"
                           className="promotions-edit-button"
                           onClick={() => editPromotion(promo)}
+                          disabled={actionId === promo.id}
                         >
                           Edit
                         </button>
@@ -656,16 +725,20 @@ export default function PromotionsPage() {
                           type="button"
                           className="promotions-toggle-button"
                           onClick={() => togglePromotion(promo)}
+                          disabled={actionId === promo.id}
                         >
-                          {promo.status === "Disabled"
-                            ? "Enable"
-                            : "Disable"}
+                          {actionId === promo.id
+                            ? "Saving..."
+                            : promo.is_active
+                              ? "Disable"
+                              : "Enable"}
                         </button>
 
                         <button
                           type="button"
                           className="promotions-delete-button"
                           onClick={() => deletePromotion(promo)}
+                          disabled={actionId === promo.id}
                         >
                           Delete
                         </button>
@@ -678,7 +751,9 @@ export default function PromotionsPage() {
               {filteredPromotions.length === 0 && (
                 <tr>
                   <td colSpan={8} className="promotions-empty">
-                    No promotions match your search or filter.
+                    {loading
+                      ? "Loading promotions..."
+                      : "No promotions match your search or filter."}
                   </td>
                 </tr>
               )}
@@ -692,9 +767,8 @@ export default function PromotionsPage() {
       </section>
 
       <p className="promotions-storage-note">
-        Frontend preview only. Promotions are stored in this browser and
-        are not yet applied at checkout. Discount validation and usage
-        tracking will be connected to the backend later.
+        Promotions are loaded from the BrainTech database. Checkout discount
+        validation and redemption tracking must be connected separately.
       </p>
     </main>
   );

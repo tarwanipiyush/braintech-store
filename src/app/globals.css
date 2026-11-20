@@ -5798,3 +5798,675 @@ button.cat-card { width: 100%; padding: 0; font: inherit; color: inherit; text-a
 .byo-page .byo-card .byo-card-img em {
   z-index: 21 !important;
 }
+
+/* Account menu: isolated styles that preserve the existing header layout. */
+.account-header-menu {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.account-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 7px 10px;
+  border: 1px solid #30323f;
+  border-radius: 9px;
+  background: #202330;
+  color: #f8fafc;
+  white-space: nowrap;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.account-icon-button:hover,
+.account-icon-button[aria-expanded="true"] {
+  border-color: #e8414a;
+}
+
+.account-user-icon {
+  font-size: 19px;
+  line-height: 1;
+}
+
+.account-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  width: 250px;
+  max-width: calc(100vw - 24px);
+  padding: 8px;
+  border: 1px solid #30323f;
+  border-radius: 12px;
+  background: #171a25;
+  color: #f8fafc;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
+}
+
+.account-dropdown-user {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 11px 10px;
+  border-bottom: 1px solid #30323f;
+}
+
+.account-dropdown-user strong {
+  color: #fff;
+  font-size: 13px;
+}
+
+.account-dropdown-user small {
+  display: block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  color: #a9abb9;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.account-dropdown-link {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 40px;
+  padding: 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #e8ebf3;
+  text-align: left;
+  text-decoration: none;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.account-dropdown-link:hover {
+  background: #292c3b;
+  color: #ff526f;
+}
+
+.account-signout-button {
+  border-top: 1px solid #30323f;
+  border-radius: 0 0 7px 7px;
+}
+
+.auth-header-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.auth-login-link,
+.auth-register-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.auth-login-link {
+  border: 1px solid #30323f;
+  color: #f8fafc;
+}
+
+.auth-register-link {
+  background: #e8414a;
+  color: #fff;
+}
+
+@media (max-width: 760px) {
+  .account-dropdown {
+    right: 0;
+  }
+}
+
+
+/* Featured product stock status */
+
+.featured-product-image {
+  position: relative;
+}
+
+.featured-product-badge.featured-out-of-stock {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: #dc2626;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+  pointer-events: none;
+}
+
+.featured-stock-unavailable {
+  display: flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 12px;
+  padding: 10px 14px;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+
+/* BrainTech Store - unavailable product button */
+
+.stock-unavailable-button,
+.stock-unavailable-button:disabled {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+
+
+/* BRAINTECH: STOP CATEGORY TILE HOVER FLICKER */
+
+.storefront .category-section .category-tiles .category-tile,
+.storefront .category-section .category-tiles .category-tile:hover,
+.storefront .category-section .category-tiles .category-tile:focus,
+.storefront .category-section .category-tiles .category-tile:focus-visible {
+  transform: none !important;
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Keep decorative elements stationary */
+
+.storefront .category-section .category-tiles .category-tile::before,
+.storefront .category-section .category-tiles .category-tile::after,
+.storefront .category-section .category-tiles .category-tile:hover::before,
+.storefront .category-section .category-tiles .category-tile:hover::after {
+  transform: none !important;
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Stable hover appearance */
+
+.storefront .category-section .category-tiles .category-tile:hover {
+  border-color: #9dbcf5 !important;
+  box-shadow: 0 8px 22px rgba(37, 99, 235, 0.12) !important;
+}
+
+/* ==========================================================
+   BRAINTECH — SAVED ADDRESSES PAGE
+   Isolated styles: does not modify existing storefront rules.
+   ========================================================== */
+
+.bt-address-page {
+  min-height: 70vh;
+  padding: 48px 24px 75px;
+  background: #f5f7fb;
+  color: #172033;
+}
+
+.bt-address-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.bt-address-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 22px;
+  margin-bottom: 32px;
+}
+
+.bt-address-kicker {
+  display: block;
+  margin-bottom: 8px;
+  color: #e04450;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.bt-address-heading h1 {
+  margin: 0;
+  color: #172033;
+  font-size: clamp(27px, 4vw, 36px);
+  font-weight: 850;
+  letter-spacing: -0.8px;
+}
+
+.bt-address-heading p {
+  margin: 9px 0 0;
+  color: #647087;
+  font-size: 15px;
+}
+
+.bt-address-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 45px;
+  padding: 12px 20px;
+  border: 1px solid #d93646;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #f05260, #cf293c);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 750;
+  cursor: pointer;
+  box-shadow: 0 5px 14px rgba(217, 54, 70, 0.16);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.bt-address-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(217, 54, 70, 0.24);
+}
+
+.bt-address-primary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.bt-address-secondary {
+  min-height: 43px;
+  padding: 10px 18px;
+  border: 1px solid #d9deea;
+  border-radius: 9px;
+  background: #fff;
+  color: #344056;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.bt-address-secondary:hover:not(:disabled) {
+  border-color: #aab5c8;
+  background: #f8faff;
+}
+
+.bt-address-message {
+  margin-bottom: 22px;
+  padding: 14px 16px;
+  border: 1px solid #dbe3f0;
+  border-radius: 9px;
+  background: #fff;
+  color: #344056;
+  font-size: 14px;
+}
+
+.bt-address-message.success {
+  border-color: #a7dfc1;
+  background: #effbf4;
+  color: #17683d;
+}
+
+.bt-address-message.error {
+  border-color: #f1b8bd;
+  background: #fff3f3;
+  color: #a72b37;
+}
+
+.bt-address-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.bt-address-card,
+.bt-address-form,
+.bt-address-empty {
+  border: 1px solid #e3e8f1;
+  border-radius: 13px;
+  background: #fff;
+  box-shadow: 0 5px 22px rgba(24, 39, 75, 0.045);
+}
+
+.bt-address-card {
+  padding: 23px;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.bt-address-card:hover {
+  border-color: #cbd7eb;
+  box-shadow: 0 9px 26px rgba(24, 39, 75, 0.08);
+}
+
+.bt-address-card-top,
+.bt-address-person {
+  display: flex;
+  align-items: center;
+}
+
+.bt-address-card-top {
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 19px;
+}
+
+.bt-address-person {
+  min-width: 0;
+  gap: 12px;
+}
+
+.bt-address-avatar {
+  display: grid;
+  flex: 0 0 43px;
+  width: 43px;
+  height: 43px;
+  place-items: center;
+  border-radius: 11px;
+  background: #fff0f1;
+  color: #d93646;
+  font-size: 22px;
+}
+
+.bt-address-person h2 {
+  margin: 0;
+  color: #202b40;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.bt-address-type {
+  display: block;
+  margin-top: 4px;
+  color: #7a8498;
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+.bt-address-default-badge {
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border: 1px solid #b9e7cc;
+  border-radius: 30px;
+  background: #effbf4;
+  color: #16834b;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.6px;
+}
+
+.bt-address-details {
+  padding: 15px 0;
+  border-top: 1px solid #edf0f5;
+  color: #566176;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.bt-address-details p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.bt-address-phone {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px 0;
+  border-top: 1px solid #edf0f5;
+  color: #344056;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.bt-address-phone span {
+  color: #d93646;
+}
+
+.bt-address-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 13px;
+}
+
+.bt-address-action {
+  min-height: 36px;
+  padding: 8px 13px;
+  border: 1px solid #dce2ed;
+  border-radius: 7px;
+  background: #fff;
+  color: #344056;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.bt-address-action:hover {
+  border-color: #f0a5ac;
+  background: #fff5f5;
+  color: #c92f40;
+}
+
+.bt-address-action.danger {
+  color: #d13b48;
+}
+
+.bt-address-action.danger:hover {
+  border-color: #efb4ba;
+  background: #fff0f1;
+}
+
+.bt-address-form {
+  margin-bottom: 25px;
+  padding: 25px;
+}
+
+.bt-address-form-heading {
+  margin-bottom: 23px;
+}
+
+.bt-address-form-heading h2 {
+  margin: 0;
+  color: #172033;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.bt-address-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.bt-address-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bt-address-field.wide {
+  grid-column: 1 / -1;
+}
+
+.bt-address-field > span {
+  color: #46536a;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.bt-address-field input,
+.bt-address-field select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 45px;
+  padding: 11px 13px;
+  border: 1px solid #dce2ed;
+  border-radius: 8px;
+  outline: none;
+  background: #fff;
+  color: #202b40;
+  font: inherit;
+  font-size: 14px;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.bt-address-field input:focus,
+.bt-address-field select:focus {
+  border-color: #d93646;
+  box-shadow: 0 0 0 3px rgba(217, 54, 70, 0.1);
+}
+
+.bt-address-default-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 21px;
+  color: #46536a;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.bt-address-default-check input {
+  width: 16px;
+  height: 16px;
+  accent-color: #d93646;
+}
+
+.bt-address-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.bt-address-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 180px;
+  color: #647087;
+  font-size: 14px;
+}
+
+.bt-address-spinner {
+  width: 19px;
+  height: 19px;
+  border: 2px solid #e4e8f0;
+  border-top-color: #d93646;
+  border-radius: 50%;
+  animation: btAddressSpin 700ms linear infinite;
+}
+
+@keyframes btAddressSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.bt-address-empty {
+  padding: 55px 20px;
+  text-align: center;
+}
+
+.bt-address-empty-icon {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  margin: 0 auto 17px;
+  border-radius: 16px;
+  background: #fff0f1;
+  color: #d93646;
+  font-size: 30px;
+}
+
+.bt-address-empty h2 {
+  margin: 0 0 9px;
+  color: #202b40;
+  font-size: 21px;
+}
+
+.bt-address-empty p {
+  max-width: 440px;
+  margin: 0 auto 22px;
+  color: #748096;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+@media (max-width: 700px) {
+  .bt-address-page {
+    padding: 32px 16px 55px;
+  }
+
+  .bt-address-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .bt-address-heading > button {
+    width: 100%;
+  }
+
+  .bt-address-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bt-address-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .bt-address-field.wide {
+    grid-column: auto;
+  }
+
+  .bt-address-form {
+    padding: 19px;
+  }
+
+  .bt-address-card {
+    padding: 19px;
+  }
+}

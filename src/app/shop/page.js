@@ -8,12 +8,16 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import HomepageBanners from "../components/HomepageBanners";
 import Link from "next/link";
 import AddToCartControl from "../components/AddToCartControl";
 import CategoryTiles from "../components/CategoryTiles";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCart } from "@/context/CartContext";
-import { products, categories } from "@/data/products";
+import {
+  products as seedProducts,
+  categories as seedCategories,
+} from "@/data/products";
 
 const formatPrice = (amount) =>
   "₹" + Number(amount || 0).toLocaleString("en-IN");
@@ -68,230 +72,40 @@ function parseWishlist(raw) {
 // Infer a brand from the available product name.
 // Add more brand rules here as your catalogue grows.
 function getProductBrand(product) {
-  const name = (product.name || "").toLowerCase();
-
-  const brands = [
-    ["amd", "AMD"],
-    ["intel", "Intel"],
-    ["nvidia", "NVIDIA"],
-    ["geforce", "NVIDIA"],
-    ["radeon", "AMD"],
-    ["asus", "ASUS"],
-    ["msi", "MSI"],
-    ["gigabyte", "Gigabyte"],
-    ["asrock", "ASRock"],
-    ["corsair", "Corsair"],
-    ["logitech", "Logitech"],
-    ["razer", "Razer"],
-    ["hyperx", "HyperX"],
-    ["cooler master", "Cooler Master"],
-    ["deepcool", "DeepCool"],
-    ["kingston", "Kingston"],
-    ["samsung", "Samsung"],
-    ["western digital", "Western Digital"],
-    ["wd ", "Western Digital"],
-    ["crucial", "Crucial"],
-    ["seagate", "Seagate"],
-    ["nzxt", "NZXT"],
-    ["lian li", "Lian Li"],
-    ["antec", "Antec"],
-    ["thermaltake", "Thermaltake"],
-    ["fractal", "Fractal Design"],
-    ["acer", "Acer"],
-    ["lg ", "LG"],
-    ["dell", "Dell"],
-    ["benq", "BenQ"],
-    ["viewsonic", "ViewSonic"],
-    ["lenovo", "Lenovo"],
-    ["hp ", "HP"],
-    ["zotac", "Zotac"],
-    ["sapphire", "Sapphire"],
-    ["palit", "Palit"],
-    ["pny", "PNY"],
-    ["teamgroup", "TeamGroup"],
-    ["g.skill", "G.Skill"],
-    ["xpg", "XPG"],
-    ["adata", "ADATA"],
-    ["ant esports", "Ant Esports"],
-  ];
-
-  const match = brands.find(([needle]) => name.includes(needle));
-
-  return match ? match[1] : "Other";
+  return String(product.brand ?? "").trim();
 }
 
 // Category-specific options are inferred only from the available name/category.
 // They are not a substitute for verified manufacturer specifications.
+
 function getProductAttributes(product) {
-  const name = (product.name || "").toLowerCase();
-  const category = product.category;
+  const specifications = Array.isArray(product.specifications)
+    ? product.specifications
+    : [];
 
-  switch (category) {
-    case "Processors": {
-      const options = [];
+  return specifications
+    .filter((spec) => {
+      return (
+        spec.field_label &&
+        spec.value !== null &&
+        spec.value !== undefined &&
+        String(spec.value).trim() !== ""
+      );
+    })
+    .map((spec) => {
+      const label = String(spec.field_label).trim();
+      const value = String(spec.value).trim();
+      const unit = String(spec.unit_label ?? "").trim();
 
-      if (name.includes("amd") || name.includes("ryzen")) {
-        options.push("AMD");
-      }
+      const displayValue =
+        unit && !value.toLowerCase().endsWith(unit.toLowerCase())
+          ? `${value} ${unit}`
+          : value;
 
-      if (name.includes("intel") || name.includes("core i")) {
-        options.push("Intel");
-      }
-
-      if (name.includes("ryzen 9")) options.push("Ryzen 9");
-      else if (name.includes("ryzen 7")) options.push("Ryzen 7");
-      else if (name.includes("ryzen 5")) options.push("Ryzen 5");
-      else if (name.includes("ryzen 3")) options.push("Ryzen 3");
-
-      if (/core ultra 9|core i9/.test(name)) options.push("Core i9 / Ultra 9");
-      else if (/core ultra 7|core i7/.test(name)) options.push("Core i7 / Ultra 7");
-      else if (/core ultra 5|core i5/.test(name)) options.push("Core i5 / Ultra 5");
-      else if (/core i3/.test(name)) options.push("Core i3");
-
-      return options;
-    }
-
-    case "Motherboards": {
-      const options = [];
-
-      if (/\bam5\b/.test(name)) options.push("AM5");
-      if (/\bam4\b/.test(name)) options.push("AM4");
-      if (/\blga\s*1700\b/.test(name)) options.push("LGA 1700");
-      if (/\blga\s*1851\b/.test(name)) options.push("LGA 1851");
-      if (/\bddr5\b/.test(name)) options.push("DDR5");
-      if (/\bddr4\b/.test(name)) options.push("DDR4");
-      if (/\bx870\b|\bx670\b|\bx570\b/.test(name)) options.push("AMD X-series");
-      if (/\bb850\b|\bb650\b|\bb550\b/.test(name)) options.push("AMD B-series");
-      if (/\bz890\b|\bz790\b|\bz690\b/.test(name)) options.push("Intel Z-series");
-      if (/\bb860\b|\bb760\b|\bb660\b/.test(name)) options.push("Intel B-series");
-
-      return options;
-    }
-
-    case "Graphic Cards": {
-      const options = [];
-
-      if (/nvidia|geforce|rtx|gtx/.test(name)) options.push("NVIDIA");
-      if (/amd|radeon|rx\s*\d/.test(name)) options.push("AMD Radeon");
-
-      const vram = name.match(/\b(4|6|8|10|12|16|20|24|32)\s*gb\b/i);
-      if (vram) options.push(`${vram[1]} GB`);
-
-      if (/rtx\s*50\d{2}/.test(name)) options.push("RTX 50 Series");
-      else if (/rtx\s*40\d{2}/.test(name)) options.push("RTX 40 Series");
-      else if (/rtx\s*30\d{2}/.test(name)) options.push("RTX 30 Series");
-      else if (/rx\s*9\d{3}/.test(name)) options.push("Radeon RX 9000 Series");
-      else if (/rx\s*7\d{3}/.test(name)) options.push("Radeon RX 7000 Series");
-      else if (/rx\s*6\d{3}/.test(name)) options.push("Radeon RX 6000 Series");
-
-      return options;
-    }
-
-    case "Power Supply": {
-      const options = [];
-      const wattage = name.match(/\b(450|500|550|600|650|700|750|800|850|900|1000|1200|1300|1500)\s*w\b/i);
-
-      if (wattage) options.push(`${wattage[1]} W`);
-
-      if (/80\+\s*gold|80 plus gold|gold/i.test(name)) options.push("80 Plus Gold");
-      else if (/80\+\s*bronze|80 plus bronze|bronze/i.test(name)) options.push("80 Plus Bronze");
-      else if (/80\+\s*platinum|80 plus platinum|platinum/i.test(name)) options.push("80 Plus Platinum");
-
-      return options;
-    }
-
-    case "RAM": {
-      const options = [];
-
-      if (/\bddr5\b/.test(name)) options.push("DDR5");
-      if (/\bddr4\b/.test(name)) options.push("DDR4");
-
-      const capacity = name.match(/\b(8|16|24|32|48|64|96|128)\s*gb\b/i);
-      if (capacity) options.push(`${capacity[1]} GB`);
-
-      if (/rgb/i.test(name)) options.push("RGB");
-
-      return options;
-    }
-
-    case "SSD": {
-      const options = [];
-
-      if (/nvme/i.test(name)) options.push("NVMe");
-      if (/sata/i.test(name)) options.push("SATA");
-      if (/m\.2/i.test(name)) options.push("M.2");
-
-      const capacity = name.match(/\b(120|128|240|250|256|480|500|512|960|1000|1024|2000|2048|4000|4096)\s*(gb|tb)\b/i);
-
-      if (capacity) {
-        const number = Number(capacity[1]);
-        const unit = capacity[2].toLowerCase();
-        const display = unit === "tb" ? `${number} TB` : `${number} GB`;
-        options.push(display);
-      }
-
-      return options;
-    }
-
-    case "CPU Cooler": {
-      const options = [];
-
-      if (/aio|liquid|water cooler|watercool/i.test(name)) {
-        options.push("Liquid cooling");
-      } else if (/air cooler|tower cooler|heatsink/i.test(name)) {
-        options.push("Air cooling");
-      }
-
-      if (/rgb/i.test(name)) options.push("RGB");
-
-      return options;
-    }
-
-    case "Monitors": {
-      const options = [];
-
-      const refresh = name.match(/\b(60|75|100|120|144|165|170|180|200|240|280|300|360|480)\s*hz\b/i);
-      if (refresh) options.push(`${refresh[1]} Hz`);
-
-      if (/oled/i.test(name)) options.push("OLED");
-      else if (/ips/i.test(name)) options.push("IPS");
-      else if (/va panel|\bva\b/i.test(name)) options.push("VA");
-
-      if (/4k|2160p|uhd/i.test(name)) options.push("4K");
-      else if (/1440p|2k|qhd/i.test(name)) options.push("1440p / QHD");
-      else if (/1080p|fhd/i.test(name)) options.push("1080p / FHD");
-
-      return options;
-    }
-
-    case "Mouse":
-    case "Keyboards":
-    case "Headphones": {
-      const options = [];
-
-      if (/wireless|bluetooth|2\.4ghz/i.test(name)) options.push("Wireless");
-      if (/wired|usb wired/i.test(name)) options.push("Wired");
-      if (/rgb/i.test(name)) options.push("RGB");
-      if (/mechanical/i.test(name)) options.push("Mechanical");
-
-      return options;
-    }
-
-    case "PC Cabinet": {
-      const options = [];
-
-      if (/mini[- ]?tower|mini itx/i.test(name)) options.push("Mini / compact");
-      if (/mid[- ]?tower/i.test(name)) options.push("Mid tower");
-      if (/full[- ]?tower/i.test(name)) options.push("Full tower");
-      if (/rgb/i.test(name)) options.push("RGB");
-
-      return options;
-    }
-
-    default:
-      return [];
-  }
+      return `${label}: ${displayValue}`;
+    });
 }
+
 
 function getAvailableAttributes(categoryProducts) {
   const values = new Set();
@@ -330,6 +144,138 @@ function ShopContent({ initial }) {
     !!initial.category || !!initial.q || initial.special || initial.wishlist;
 
   const { cart, addToCart, updateQuantity } = useCart();
+  const [products, setProducts] = useState(seedProducts);
+const [categories, setCategories] = useState(seedCategories);
+const [productsLoading, setProductsLoading] = useState(true);
+const [productsError, setProductsError] = useState("");
+
+useEffect(() => {
+  let cancelled = false;
+
+  async function loadProducts() {
+    try {
+      setProductsLoading(true);
+      setProductsError("");
+
+
+const response = await fetch(
+  "/api/store/products",
+  { cache: "no-store" }
+);
+
+      if (!response.ok) {
+        throw new Error("Could not connect to the product API.");
+      }
+
+      const data = await response.json();
+
+      if (!data.success || !Array.isArray(data.products)) {
+        throw new Error(data.message || "Invalid product data received.");
+      }
+
+      if (cancelled) return;
+
+const liveProducts = data.products.map((item) => {
+  const price = Number(item.price ?? 0);
+  const oldPrice = Number(
+    item.compare_at_price ?? item.oldPrice ?? item.old_price ?? price
+  );
+
+  const stockQuantity = Number(item.stock_quantity ?? 0);
+
+  return {
+    ...item,
+    id: Number(item.id),
+    name: item.name ?? item.title ?? "Unnamed product",
+    category: item.category_name ?? item.category ?? "",
+    price,
+    oldPrice,
+    image:
+      item.image_url ??
+      item.image ??
+      "/images/product-placeholder.png",
+    stockQuantity,
+    stock_quantity: stockQuantity,
+    tag: item.is_special_offer ? "Special Offer" : "",
+rating: item.rating != null ? Number(item.rating) : null,    description: item.description ?? "",
+    features: Array.isArray(item.features) ? item.features : [],
+    specifications: Array.isArray(item.specifications)
+  ? item.specifications
+  : [],
+   brand: item.brand ?? "",
+sku: item.sku ?? "",
+created_at: item.created_at ?? null,
+  };
+});
+
+      const liveCategories = Array.isArray(data.categories)
+        ? data.categories.map((item) => [item.name, "◈"])
+        : [];
+
+      setProducts(liveProducts);
+      setCategories(liveCategories);
+    } catch (error) {
+      if (!cancelled) {
+        setProductsError(
+          error.message || "Unable to load products from the server."
+        );
+      }
+    } finally {
+      if (!cancelled) {
+        setProductsLoading(false);
+      }
+    }
+  }
+
+  loadProducts();
+
+  return () => {
+    cancelled = true;
+  };
+}, []);
+
+useEffect(() => {
+  let cancelled = false;
+
+  async function loadBestSellers() {
+    try {
+      const response = await fetch("/api/store/best-sellers", {
+        cache: "no-store",
+      });
+
+      if (!response.ok) {
+        throw new Error("Could not load Best Sellers.");
+      }
+
+      const data = await response.json();
+
+      if (!data.success || !Array.isArray(data.best_sellers)) {
+        throw new Error(data.message || "Invalid Best Sellers data.");
+      }
+
+      const ids = data.best_sellers
+        .map((item) => Number(item.product_id))
+        .filter((id) => Number.isFinite(id));
+
+      if (!cancelled) {
+        setBestSellerIds(ids);
+      }
+    } catch (error) {
+      console.error("Best Sellers loading error:", error);
+
+      if (!cancelled) {
+        setBestSellerIds([]);
+      }
+    }
+  }
+
+  loadBestSellers();
+
+  return () => {
+    cancelled = true;
+  };
+}, []);
+
 
   const [search, setSearch] = useState(initial.q);
   const [activeCategory, setActiveCategory] = useState(
@@ -348,6 +294,7 @@ function ShopContent({ initial }) {
   const [wishlistOnly, setWishlistOnly] = useState(initial.wishlist);
   const [specialOnly, setSpecialOnly] = useState(initial.special);
   const [productTab, setProductTab] = useState("");
+  const [bestSellerIds, setBestSellerIds] = useState([]);
   const [quickView, setQuickView] = useState(null);
 
   // Category-specific filter state.
@@ -392,13 +339,17 @@ function ShopContent({ initial }) {
 
       return false;
     });
-  }, [activeCategory]);
+  }, [products, activeCategory]);
 
   const availableBrands = useMemo(() => {
-    return [
-      ...new Set(categoryProducts.map(getProductBrand)),
-    ].sort((a, b) => a.localeCompare(b));
-  }, [categoryProducts]);
+  return [
+    ...new Set(
+      categoryProducts
+        .map(getProductBrand)
+        .filter(Boolean)
+    ),
+  ].sort((a, b) => a.localeCompare(b));
+}, [categoryProducts]); [categoryProducts];
 
   const availableAttributes = useMemo(
     () => getAvailableAttributes(categoryProducts),
@@ -440,18 +391,18 @@ function ShopContent({ initial }) {
       const matchesSearch = searchableText.includes(searchTerm);
       const matchesWishlist = !wishlistOnly || wishlist.includes(product.id);
 
-      const matchesSpecial =
-        !specialOnly ||
-        ["Monitor deal", "Hot pick", "Deal", "Bestseller"].includes(
-          product.tag
-        );
+     const matchesSpecial =
+  !specialOnly || Number(product.is_special_offer) === 1;
 
-      const matchesProductTab =
-        productTab === "" ||
-        (productTab === "Best Sellers" &&
-          ["Bestseller", "Hot pick"].includes(product.tag)) ||
-        (productTab === "New Arrivals" && product.id >= 179);
+     const productCreatedAt = product.created_at
+  ? new Date(product.created_at)
+  : null;
 
+const matchesProductTab =
+  productTab === "" ||
+  productTab === "New Arrivals" ||
+  (productTab === "Best Sellers" &&
+    bestSellerIds.includes(Number(product.id)));
       const matchesBrand =
         selectedBrands.length === 0 ||
         selectedBrands.includes(getProductBrand(product));
@@ -482,10 +433,15 @@ function ShopContent({ initial }) {
       );
     });
 
-    if (productTab === "New Arrivals") {
-      result = [...result].sort((a, b) => b.id - a.id);
-    }
-
+   if (productTab === "New Arrivals") {
+  result = [...result]
+    .sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() -
+        new Date(a.created_at).getTime()
+    )
+    .slice(0, 8);
+}
     if (sort === "price-low") {
       result = [...result].sort((a, b) => a.price - b.price);
     }
@@ -500,26 +456,22 @@ function ShopContent({ initial }) {
       );
     }
 
-    if (sort === "rating") {
-      result = [...result].sort(
-        (a, b) => Number(b.rating || 0) - Number(a.rating || 0)
-      );
-    }
 
-    return result;
-  }, [
-    categoryProducts,
-    search,
-    wishlistOnly,
-    wishlist,
-    specialOnly,
-    productTab,
-    selectedBrands,
-    selectedAttributes,
-    minPrice,
-    maxPrice,
-    sort,
-  ]);
+ return result;
+}, [
+  categoryProducts,
+  search,
+  wishlistOnly,
+  wishlist,
+  specialOnly,
+  productTab,
+  bestSellerIds,
+  selectedBrands,
+  selectedAttributes,
+  minPrice,
+  maxPrice,
+  sort,
+]);
 
   function resetCategoryFilters() {
     setSelectedBrands([]);
@@ -587,8 +539,10 @@ function ShopContent({ initial }) {
     router.replace("/shop", { scroll: false });
   }
 
-  return (
+return (
     <div className="storefront">
+      <HomepageBanners page="shop" placement="top" />
+
       <section className="hero" id="top">
         <div className="hero-glow glow-one" />
         <div className="hero-glow glow-two" />
@@ -687,7 +641,9 @@ function ShopContent({ initial }) {
           <span>DESIGN YOUR OWN STANDARD</span>
         </div>
       </section>
+      <HomepageBanners page="shop" placement="below_hero" />
 
+      <section className="trust-strip"></section>
       <section className="trust-strip">
         {[
           ["↗", "Reliable delivery", "Shipping options at checkout"],
@@ -726,10 +682,12 @@ function ShopContent({ initial }) {
           </button>
         </div>
 
-        <CategoryTiles active={activeCategory} onSelect={chooseCategory} />
-      </section>
+      <CategoryTiles active={activeCategory} onSelect={chooseCategory} />
+</section>
 
-      <section className="catalog-layout" id="catalog">
+<HomepageBanners page="shop" placement="between_sections" />
+
+<section className="catalog-layout" id="catalog">
         <aside className="category-sidebar">
           <div className="sidebar-title">
             <span>☷</span>
@@ -770,7 +728,7 @@ function ShopContent({ initial }) {
               </span>
             </button>
           ))}
-          
+
 {/* Category-aware product filters — left sidebar */}
 <section
   className="bt-category-filters"
@@ -998,7 +956,7 @@ function ShopContent({ initial }) {
           </div>
 
           {/* Category-aware product filters */}
-          
+
 
           <div
             style={{
@@ -1126,9 +1084,8 @@ function ShopContent({ initial }) {
                     </Link>
 
                     <div className="product-rating">
-                      <span>★★★★★</span>
-                      <small>{product.rating} · Demo rating</small>
-                    </div>
+  <small>No customer ratings yet</small>
+</div>
 
                     <div className="product-price-row">
                       <b>{formatPrice(product.price)}</b>
@@ -1152,11 +1109,12 @@ function ShopContent({ initial }) {
           )}
 
           <div className="catalog-note">
-            Showing {filteredProducts.length} of {categoryProducts.length} items
-            in this selection. This is a sample catalog, not a live inventory
-            feed. Verify specifications, prices, stock and warranty before
-            selling.
-          </div>
+  {productsLoading
+    ? "Connecting to the BrainTech product catalogue..."
+    : productsError
+      ? `Live catalogue unavailable: ${productsError}`
+      : `Showing live catalogue data: ${filteredProducts.length} of ${categoryProducts.length} products in this selection.`}
+</div>
         </div>
       </section>
 
@@ -1197,7 +1155,9 @@ function ShopContent({ initial }) {
         </div>
       </section>
 
-      {quickView && (
+      <HomepageBanners page="shop" placement="before_footer" />
+
+{quickView && (
         <div
           className="modal-backdrop"
           role="presentation"

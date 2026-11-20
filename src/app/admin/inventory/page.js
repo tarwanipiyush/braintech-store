@@ -2,10 +2,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { products as seedProducts } from "@/data/products";
 import "../admin.css";
 
-const STORAGE_KEY = "braintech-admin-products-v1";
+const API_URL = "/api/admin/products";
+const TOKEN_KEY = "braintech-admin-token";
 
 const formatPrice = (amount) =>
   new Intl.NumberFormat("en-IN", {
@@ -15,8 +15,106 @@ const formatPrice = (amount) =>
   }).format(Number(amount) || 0);
 
 function getStock(product) {
-  const value = Number(product.stock ?? product.inventory ?? 0);
+  const value = Number(
+    product.stock_quantity ?? product.stock ?? product.inventory ?? 0
+  );
+
   return Number.isFinite(value) ? value : 0;
+}
+
+function getToken() {
+  if (typeof window === "undefined") return "";
+
+  return localStorage.getItem(TOKEN_KEY) || "";
+}
+
+function normalizeProduct(product) {
+  return {
+    ...product,
+    id: product.id,
+    stock: getStock(product),
+    inventory: getStock(product),
+    image: product.image_url || product.image || "",
+    category:
+      product.category_name ||
+      product.category ||
+      "Uncategorized",
+  };
+}
+
+function getProductPayload(product, quantity) {
+  return {
+    id: product.id,
+    category_id: product.category_id ?? null,
+    name: product.name || "",
+    slug: product.slug || "",
+    sku: product.sku || "",
+    brand: product.brand || "",
+    short_description: product.short_description || "",
+    description: product.description || "",
+    price: Number(product.price) || 0,
+    compare_at_price:
+      product.compare_at_price === "" ||
+      product.compare_at_price == null
+        ? null
+        : Number(product.compare_at_price),
+    cost_price:
+      product.cost_price === "" ||
+      product.cost_price == null
+        ? null
+        : Number(product.cost_price),
+    stock_quantity: quantity,
+    low_stock_threshold:
+      Number(product.low_stock_threshold) || 5,
+    image_url: product.image_url || product.image || "",
+    is_featured: Number(product.is_featured) ? 1 : 0,
+    is_special_offer: Number(product.is_special_offer) ? 1 : 0,
+    is_active: Number(product.is_active) ? 1 : 0,
+  };
+}
+
+async function apiRequest(method, body) {
+  const token = getToken();
+
+  if (!token) {
+    throw new Error(
+      "Admin login token not found. Please log in again."
+    );
+  }
+
+  const response = await fetch(API_URL, {
+    method,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+    ...(body !== undefined
+      ? { body: JSON.stringify(body) }
+      : {}),
+  });
+
+  const raw = await response.text();
+
+  let data;
+
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    throw new Error(
+      `Server returned an invalid response (${response.status}).`
+    );
+  }
+
+  if (!response.ok || data.success === false) {
+    throw new Error(
+      data.message ||
+        `Request failed with status ${response.status}.`
+    );
+  }
+
+  return data;
 }
 
 export default function InventoryPage() {
@@ -26,47 +124,44 @@ export default function InventoryPage() {
   const [editingId, setEditingId] = useState(null);
   const [stockInput, setStockInput] = useState("");
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("success");
   const [loaded, setLoaded] = useState(false);
+  const [savingId, setSavingId] = useState(null);
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      const list = saved ? JSON.parse(saved) : seedProducts;
+    let cancelled = false;
 
-      setProducts(
-        Array.isArray(list)
-          ? list.map((product) => ({
-              ...product,
-              stock: getStock(product),
-            }))
-          : []
-      );
-    } catch (error) {
-      console.error("Could not load inventory:", error);
-      setProducts(
-        seedProducts.map((product) => ({
-          ...product,
-          stock: getStock(product),
-        }))
-      );
+    async function loadInventory() {
+      try {
+        const data = await apiRequest("GET");
+
+        const list = Array.isArray(data.products)
+          ? data.products
+          : [];
+
+        if (!cancelled) {
+          setProducts(list.map(normalizeProduct));
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setMessage(
+            error.message || "Could not load inventory."
+          );
+          setMessageType("error");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoaded(true);
+        }
+      }
     }
 
-    setLoaded(true);
+    loadInventory();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
-
-  function saveProducts(nextProducts) {
-    setProducts(nextProducts);
-
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(nextProducts));
-      setMessage("Inventory saved successfully.");
-    } catch (error) {
-      console.error("Could not save inventory:", error);
-      setMessage(
-        "Could not save changes. Browser storage may be full."
-      );
-    }
-  }
 
   const filteredProducts = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -85,7 +180,9 @@ export default function InventoryPage() {
         const matchesFilter =
           stockFilter === "all" ||
           (stockFilter === "in-stock" && stock > 5) ||
-          (stockFilter === "low-stock" && stock > 0 && stock <= 5) ||
+          (stockFilter === "low-stock" &&
+            stock > 0 &&
+            stock <= 5) ||
           (stockFilter === "out-of-stock" && stock <= 0);
 
         return matchesSearch && matchesFilter;
@@ -112,7 +209,7 @@ export default function InventoryPage() {
     setMessage("");
   }
 
-  function saveStock(product) {
+  async function saveStock(product) {
     const quantity = Number(stockInput);
 
     if (
@@ -121,22 +218,46 @@ export default function InventoryPage() {
       quantity < 0
     ) {
       setMessage("Enter a valid whole number of 0 or more.");
+      setMessageType("error");
       return;
     }
 
-    const nextProducts = products.map((item) =>
-      item.id === product.id
-        ? {
-            ...item,
-            stock: quantity,
-            inventory: quantity,
-          }
-        : item
-    );
+    setSavingId(product.id);
+    setMessage("");
 
-    saveProducts(nextProducts);
-    setEditingId(null);
-    setStockInput("");
+    try {
+      const payload = getProductPayload(product, quantity);
+
+      const data = await apiRequest("PUT", payload);
+
+      // Only update the UI after the server confirms success.
+      setProducts((current) =>
+        current.map((item) =>
+          String(item.id) === String(product.id)
+            ? {
+                ...item,
+                stock: quantity,
+                inventory: quantity,
+                stock_quantity: quantity,
+              }
+            : item
+        )
+      );
+
+      setEditingId(null);
+      setStockInput("");
+      setMessage(
+        data.message || "Stock updated successfully in the database."
+      );
+      setMessageType("success");
+    } catch (error) {
+      setMessage(
+        error.message || "Could not update stock."
+      );
+      setMessageType("error");
+    } finally {
+      setSavingId(null);
+    }
   }
 
   function cancelEditing() {
@@ -177,16 +298,18 @@ export default function InventoryPage() {
 
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
+
     link.href = url;
     link.download = "braintech-inventory.csv";
     link.click();
+
     URL.revokeObjectURL(url);
   }
 
   if (!loaded) {
     return (
       <main className="inventory-page">
-        <p>Loading inventory...</p>
+        <p>Loading inventory from server...</p>
       </main>
     );
   }
@@ -195,8 +318,12 @@ export default function InventoryPage() {
     <main className="inventory-page">
       <header className="inventory-header">
         <div>
-          <p className="inventory-eyebrow">BRAINTECH STORE / ADMIN</p>
+          <p className="inventory-eyebrow">
+            BRAINTECH STORE / ADMIN
+          </p>
+
           <h1>Inventory</h1>
+
           <p className="inventory-subtitle">
             Manage stock levels and monitor product availability.
           </p>
@@ -212,7 +339,16 @@ export default function InventoryPage() {
       </header>
 
       {message && (
-        <div className="inventory-message" role="status">
+        <div
+          className="inventory-message"
+          role="status"
+          style={{
+            color:
+              messageType === "error"
+                ? "#dc2626"
+                : undefined,
+          }}
+        >
           {message}
         </div>
       )}
@@ -255,13 +391,17 @@ export default function InventoryPage() {
             type="search"
             placeholder="Search name, category, SKU..."
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(event) =>
+              setSearch(event.target.value)
+            }
           />
 
           <select
             className="inventory-filter"
             value={stockFilter}
-            onChange={(event) => setStockFilter(event.target.value)}
+            onChange={(event) =>
+              setStockFilter(event.target.value)
+            }
             aria-label="Filter stock status"
           >
             <option value="all">All stock</option>
@@ -288,7 +428,10 @@ export default function InventoryPage() {
             <tbody>
               {filteredProducts.map((product) => {
                 const stock = getStock(product);
-                const isEditing = editingId === product.id;
+                const isEditing =
+                  String(editingId) === String(product.id);
+                const isSaving =
+                  String(savingId) === String(product.id);
 
                 const status =
                   stock <= 0
@@ -313,7 +456,9 @@ export default function InventoryPage() {
                         )}
 
                         <div>
-                          <strong>{product.name || "Unnamed product"}</strong>
+                          <strong>
+                            {product.name || "Unnamed product"}
+                          </strong>
                           <small>ID: {product.id}</small>
                         </div>
                       </div>
@@ -331,6 +476,7 @@ export default function InventoryPage() {
                           min="0"
                           step="1"
                           value={stockInput}
+                          disabled={isSaving}
                           onChange={(event) =>
                             setStockInput(event.target.value)
                           }
@@ -342,7 +488,9 @@ export default function InventoryPage() {
                     </td>
 
                     <td>
-                      <span className={`inventory-status ${status}`}>
+                      <span
+                        className={`inventory-status ${status}`}
+                      >
                         {status === "out"
                           ? "Out of stock"
                           : status === "low"
@@ -357,14 +505,16 @@ export default function InventoryPage() {
                           <button
                             type="button"
                             className="inventory-save-button"
+                            disabled={isSaving}
                             onClick={() => saveStock(product)}
                           >
-                            Save
+                            {isSaving ? "Saving..." : "Save"}
                           </button>
 
                           <button
                             type="button"
                             className="inventory-cancel-button"
+                            disabled={isSaving}
                             onClick={cancelEditing}
                           >
                             Cancel
@@ -401,9 +551,8 @@ export default function InventoryPage() {
       </section>
 
       <p className="inventory-storage-note">
-        Frontend preview: stock changes are saved in this browser and use
-        the same local product storage as the Products admin page. They
-        are not yet synced to a server or database.
+        Inventory is loaded from your server. Stock changes are saved
+        to the product database after the server confirms the update.
       </p>
     </main>
   );

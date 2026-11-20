@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import { useCart } from "@/context/CartContext";
 
 const formatPrice = (amount) =>
@@ -22,30 +23,108 @@ const getProductImage = (product) => {
 };
 
 export default function CheckoutReviewPage() {
-  useEffect(() => {
-  try {
-    const saved = localStorage.getItem("braintech-admin-settings-v1");
-
-    if (saved) {
-      const settings = JSON.parse(saved);
-      setCodEnabled(settings.codEnabled === true);
-    } else {
-      setCodEnabled(false);
-    }
-  } catch {
-    setCodEnabled(false);
-  }
-}, []);
   const router = useRouter();
-  const { cart, cartTotal, cartCount, loaded } = useCart();
+  const {
+  cart,
+  cartTotal,
+  cartCount,
+  loaded,
+  clearCart,
+} = useCart();
 
   const [address, setAddress] = useState(null);
   const [addressLoaded, setAddressLoaded] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("upi");
   const [codEnabled, setCodEnabled] = useState(false);
+  const [standardShipping, setStandardShipping] = useState(0);
+const [freeShippingThreshold, setFreeShippingThreshold] = useState(0);
   const [placingOrder, setPlacingOrder] = useState(false);
   const [error, setError] = useState("");
-  
+  const [couponCode, setCouponCode] = useState("");
+const [appliedCoupon, setAppliedCoupon] = useState(null);
+const [couponLoading, setCouponLoading] = useState(false);
+const [couponError, setCouponError] = useState("");
+const [couponMessage, setCouponMessage] = useState("");
+
+const discountAmount =
+  appliedCoupon && Number(appliedCoupon.subtotal) === Number(cartTotal)
+    ? Number(appliedCoupon.discount_amount) || 0
+    : 0;
+
+const shippingCost =
+  freeShippingThreshold > 0 && Number(cartTotal) >= freeShippingThreshold
+    ? 0
+    : standardShipping;
+
+const payableTotal =
+  Math.max(0, Number(cartTotal) - discountAmount) + shippingCost;
+async function applyCoupon() {
+  setCouponError("");
+  setCouponMessage("");
+
+  const code = couponCode.trim().toUpperCase();
+
+  if (!code) {
+    setCouponError("Please enter a coupon code.");
+    return;
+  }
+
+  if (!cart.length || Number(cartTotal) <= 0) {
+    setCouponError("Your cart is empty.");
+    return;
+  }
+
+  setCouponLoading(true);
+
+  try {
+    const response = await fetch(
+      "https://skilllynxedubridge.com/api/braintech/validate-coupon.php",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          code,
+          subtotal: Number(cartTotal),
+        }),
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || result.success !== true) {
+      setAppliedCoupon(null);
+      throw new Error(result.message || "This coupon could not be applied.");
+    }
+
+    setAppliedCoupon({
+      code,
+      subtotal: Number(cartTotal),
+      discount_amount: Number(result.discount_amount) || 0,
+    });
+
+    setCouponCode(code);
+    setCouponMessage(result.message || "Coupon applied successfully.");
+  } catch (err) {
+    setCouponError(
+      err instanceof Error
+        ? err.message
+        : "Unable to validate this coupon. Please try again."
+    );
+  } finally {
+    setCouponLoading(false);
+  }
+}
+
+function removeCoupon() {
+  setAppliedCoupon(null);
+  setCouponCode("");
+  setCouponError("");
+  setCouponMessage("");
+}
+
   // Load the saved delivery address.
   useEffect(() => {
     try {
@@ -65,23 +144,66 @@ export default function CheckoutReviewPage() {
     }
   }, []);
 
-  // Load the COD preference from Admin Settings.
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(
-        "braintech-admin-settings-v1"
-      );
 
-      if (saved) {
-        const settings = JSON.parse(saved);
-        setCodEnabled(settings.codEnabled === true);
-      } else {
-        setCodEnabled(false);
+// Load the COD preference from the database through the public API.
+useEffect(() => {
+  let cancelled = false;
+
+  async function loadStoreSettings() {
+    try {
+      const response = await fetch("/api/store/settings", {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+        cache: "no-store",
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || result.success !== true || !result.settings) {
+        throw new Error("Unable to load store settings.");
       }
-    } catch {
-      setCodEnabled(false);
+
+      if (!cancelled) {
+        const enabled = result.settings.codEnabled === true;
+
+        setCodEnabled(enabled);
+        setStandardShipping(
+  Math.max(0, Number(result.settings.standardShipping) || 0)
+);
+
+setFreeShippingThreshold(
+  Math.max(0, Number(result.settings.freeShippingThreshold) || 0)
+);
+
+        if (!enabled) {
+          setPaymentMethod((current) =>
+            current === "cod" ? "upi" : current
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Checkout settings error:", error);
+
+      if (!cancelled) {
+        setCodEnabled(false);
+        setStandardShipping(0);
+setFreeShippingThreshold(0);
+        setPaymentMethod((current) =>
+          current === "cod" ? "upi" : current
+        );
+      }
     }
-  }, []);
+  }
+
+  loadStoreSettings();
+
+  return () => {
+    cancelled = true;
+  };
+}, []);
+
 
 
 
@@ -99,8 +221,17 @@ export default function CheckoutReviewPage() {
     }
   }, [loaded, addressLoaded, cart.length, address, router]);
 
-  function placeOrder() {
+
+
+  async function placeOrder() {
     setError("");
+    if (paymentMethod === "cod" && !codEnabled) {
+  setError(
+    "Cash on Delivery is currently unavailable. Please choose another payment method."
+  );
+  setPaymentMethod("upi");
+  return;
+}
 
     if (!address) {
       setError("Please add your delivery address before continuing.");
@@ -112,13 +243,85 @@ export default function CheckoutReviewPage() {
       return;
     }
 
+    if (placingOrder) return;
+
     setPlacingOrder(true);
 
     try {
-      const orderId = `BT${Date.now().toString().slice(-8)}`;
+      const fullName =
+        address.fullName ||
+        address.name ||
+        [address.firstName, address.lastName].filter(Boolean).join(" ");
 
+const supabase = createClient();
+
+const {
+  data: { session },
+  error: authError,
+} = await supabase.auth.getSession();
+
+if (authError || !session?.access_token || !session.user?.email) {
+  throw new Error(
+    "Please sign in to your account before placing this order."
+  );
+}
+
+const customerEmail = session.user.email;
+
+const customer = {
+  name: fullName,
+  email: customerEmail,
+  phone: address.phone || address.mobile || "",
+};
+
+const response = await fetch(
+  "https://skilllynxedubridge.com/api/braintech/orders.php",
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({
+  customer,
+  address,
+  paymentMethod,
+
+  couponCode:
+    appliedCoupon &&
+    Number(appliedCoupon.subtotal) === Number(cartTotal)
+      ? appliedCoupon.code
+      : null,
+
+  items: cart.map((item) => ({
+    productId: Number(item.id),
+    quantity: Number(item.quantity) || 1,
+  })),
+}),
+  }
+);
+
+
+      let result;
+
+      try {
+        result = await response.json();
+      } catch {
+        throw new Error("The order server returned an invalid response.");
+      }
+
+      if (!response.ok || result.success !== true || !result.order) {
+        throw new Error(
+          result.message || "We couldn't place your order. Please try again."
+        );
+      }
+
+      const savedOrder = result.order;
+
+      // Preserve the order structure expected by the existing confirmation page.
       const order = {
-        orderId,
+        orderId: savedOrder.orderNumber,
+        databaseOrderId: savedOrder.id,
         createdAt: new Date().toISOString(),
         items: cart.map((item) => ({
           ...item,
@@ -126,22 +329,47 @@ export default function CheckoutReviewPage() {
         })),
         address,
         paymentMethod,
-        subtotal: cartTotal,
-        shipping: 0,
-        total: cartTotal,
+        subtotal: Number(savedOrder.subtotal),
+shipping: Number(savedOrder.shippingCost) || 0,        total: Number(savedOrder.total),
         paymentStatus:
-          paymentMethod === "cod" ? "Pay on delivery" : "Payment pending",
+          paymentMethod === "cod"
+            ? "Pay on delivery"
+            : "Payment pending",
         orderStatus: "Order placed",
       };
 
-      localStorage.setItem("braintech-latest-order", JSON.stringify(order));
+      const savedOrders = localStorage.getItem("braintech-orders");
+      const orders = savedOrders ? JSON.parse(savedOrders) : [];
 
+      if (!Array.isArray(orders)) {
+        throw new Error(
+          "Your order was saved, but local order history is invalid."
+        );
+      }
+
+      localStorage.setItem(
+        "braintech-orders",
+        JSON.stringify([order, ...orders])
+      );
+
+      localStorage.setItem(
+        "braintech-latest-order",
+        JSON.stringify(order)
+      );
+
+      clearCart();
       router.push("/checkout/confirmation");
-    } catch {
-      setError("We couldn't save your order. Please try again.");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "We couldn't place your order. Please try again."
+      );
       setPlacingOrder(false);
     }
   }
+
+
 
   if (!loaded || !addressLoaded || !cart.length || !address) {
     return (
@@ -354,7 +582,7 @@ export default function CheckoutReviewPage() {
 
             </div>
 
-            
+
               <div className="review-payment-note">
                 <span>ⓘ</span>
                 <p>
@@ -362,65 +590,121 @@ export default function CheckoutReviewPage() {
                   gateway must be connected to collect UPI or card payments.
                 </p>
               </div>
-            
+
           </section>
         </div>
 
-        <aside className="review-summary">
-          <h2>Order summary</h2>
 
-          <div className="review-summary-row">
-            <span>Items ({cartCount})</span>
-            <strong>{formatPrice(cartTotal)}</strong>
-          </div>
+<aside className="review-summary">
+  <h2>Order summary</h2>
 
-          <div className="review-summary-row">
-            <span>Shipping</span>
-            <strong className="review-free">FREE</strong>
-          </div>
+  <div className="review-coupon">
+    <label htmlFor="checkout-coupon">Have a coupon code?</label>
 
-          <div className="review-summary-row">
-            <span>Taxes</span>
-            <span>Included in listed prices</span>
-          </div>
+    <div className="review-coupon-input">
+      <input
+        id="checkout-coupon"
+        type="text"
+        placeholder="Enter coupon code"
+        value={couponCode}
+        onChange={(e) => {
+          setCouponCode(e.target.value.toUpperCase());
+          setCouponError("");
+          setCouponMessage("");
+          if (appliedCoupon) setAppliedCoupon(null);
+        }}
+        disabled={couponLoading || placingOrder}
+      />
 
-          <div className="review-summary-total">
-            <span>Total</span>
-            <strong>{formatPrice(cartTotal)}</strong>
-          </div>
+      <button
+        type="button"
+        onClick={applyCoupon}
+        disabled={couponLoading || placingOrder || !couponCode.trim()}
+      >
+        {couponLoading ? "Checking..." : "Apply"}
+      </button>
+    </div>
 
-          <button
-            type="button"
-            className="review-place-order"
-            onClick={placeOrder}
-            disabled={placingOrder}
-          >
-            {placingOrder ? "Processing..." : "Place order"}
-            {!placingOrder && <span>→</span>}
-          </button>
+    {couponError && (
+      <p className="review-coupon-error">{couponError}</p>
+    )}
 
-          {error && <p className="review-error">{error}</p>}
-
-          <p className="review-terms">
-            By continuing, you confirm your delivery details and selected
-            payment method.
-          </p>
-
-          <div className="review-trust">
-            <span>🔒</span>
-            <div>
-              <strong>Your order details</strong>
-              <p>Saved for the confirmation page on this device.</p>
-            </div>
-          </div>
-
-          <Link href="/cart" className="review-back-cart">
-            ← Return to cart
-          </Link>
-        </aside>
+    {couponMessage && appliedCoupon && (
+      <div className="review-coupon-success">
+        <span>{couponMessage}</span>
+        <button
+          type="button"
+          onClick={removeCoupon}
+          disabled={placingOrder}
+        >
+          Remove
+        </button>
       </div>
+    )}
+  </div>
 
-      <footer className="review-footer">
+  <div className="review-summary-row">
+    <span>Items ({cartCount})</span>
+    <strong>{formatPrice(cartTotal)}</strong>
+  </div>
+
+ <div className="review-summary-row">
+  <span>Shipping</span>
+  {shippingCost === 0 ? (
+    <strong className="review-free">FREE</strong>
+  ) : (
+    <strong>{formatPrice(shippingCost)}</strong>
+  )}
+</div>
+
+  <div className="review-summary-row">
+    <span>Taxes</span>
+    <span>Included in listed prices</span>
+  </div>
+
+  {discountAmount > 0 && (
+    <div className="review-summary-row review-discount-row">
+      <span>Coupon discount</span>
+      <strong>-{formatPrice(discountAmount)}</strong>
+    </div>
+  )}
+
+  <div className="review-summary-total">
+    <span>Total</span>
+    <strong>{formatPrice(payableTotal)}</strong>
+  </div>
+
+  <button
+    type="button"
+    className="review-place-order"
+    onClick={placeOrder}
+    disabled={placingOrder || couponLoading}
+  >
+    {placingOrder ? "Processing..." : "Place order"}
+    {!placingOrder && <span>→</span>}
+  </button>
+
+  {error && <p className="review-error">{error}</p>}
+
+  <p className="review-terms">
+    By continuing, you confirm your delivery details and selected
+    payment method.
+  </p>
+
+  <div className="review-trust">
+    <span>🔒</span>
+    <div>
+      <strong>Your order details</strong>
+      <p>Saved for the confirmation page on this device.</p>
+    </div>
+  </div>
+
+  <Link href="/cart" className="review-back-cart">
+    ← Return to cart
+  </Link>
+</aside>
+</div>
+ <footer className="review-footer">
         © {new Date().getFullYear()} BrainTech Store. All rights reserved.
       </footer>
 

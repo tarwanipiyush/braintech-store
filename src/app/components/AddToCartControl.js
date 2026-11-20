@@ -1,14 +1,37 @@
+
 "use client";
 
 import { useCart } from "@/context/CartContext";
 
-/* One button: "Add to Cart".
-   Once the item is in the cart it turns into  [ − ]  N IN CART  [ + ].
-   Every add shows the popup (see CartToast). Pressing − at 1 removes the item and the button comes back. */
 export default function AddToCartControl({ product, size = "md" }) {
   const { addToCart, updateQuantity, cart } = useCart();
-  const inCart = cart.find((item) => item.id === product.id);
+
+  const stock = Number(
+    product.stockQuantity ??
+    product.stock_quantity ??
+    product.stock ??
+    0
+  );
+
+  const outOfStock = !Number.isFinite(stock) || stock <= 0;
+
+  const inCart = cart.find(
+    (item) => item.id === product.id
+  );
+
   const large = size === "lg" ? "cart-lg" : "";
+
+  if (outOfStock) {
+    return (
+      <button
+        type="button"
+        className={`add-cart-button cart-btn ${large} stock-unavailable-button`}
+        disabled
+      >
+        OUT OF STOCK
+      </button>
+    );
+  }
 
   if (!inCart) {
     return (
@@ -30,7 +53,9 @@ export default function AddToCartControl({ product, size = "md" }) {
     >
       <button
         type="button"
-        onClick={() => updateQuantity(product.id, inCart.quantity - 1)}
+        onClick={() =>
+          updateQuantity(product.id, inCart.quantity - 1)
+        }
         aria-label="Decrease quantity"
       >
         −
@@ -43,6 +68,7 @@ export default function AddToCartControl({ product, size = "md" }) {
 
       <button
         type="button"
+        disabled={inCart.quantity >= stock}
         onClick={() => addToCart(product)}
         aria-label="Increase quantity"
       >

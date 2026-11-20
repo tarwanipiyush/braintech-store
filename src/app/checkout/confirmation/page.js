@@ -146,14 +146,18 @@ export default function CheckoutConfirmationPage() {
             before accepting real customer orders.
           </p>
         )}
+<Link href="/my-orders" className="confirmation-button">
+  View my orders →
+</Link>
 
-        <Link href="/shop" className="confirmation-button">
-          Continue shopping →
-        </Link>
+<Link href="/shop" className="confirmation-home">
+  Continue shopping
+</Link>
 
-        <Link href="/" className="confirmation-home">
-          Back to homepage
-        </Link>
+<Link href="/" className="confirmation-home">
+  Back to homepage
+</Link>
+
       </div>
 
       <footer className="confirmation-footer">

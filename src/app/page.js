@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import CategoryTiles from "./components/CategoryTiles";
 import "./globals.css";
+import HomepageBanners from "./components/HomepageBanners";
 
 export default function Home() {
   const router = useRouter();
@@ -24,8 +25,11 @@ export default function Home() {
 
   return (
     <div className="storefront">
-      {/* HERO */}
-      <section className="hero" id="top">
+    {/* DYNAMIC HOSTINGER BANNERS */}
+<HomepageBanners />
+
+{/* HERO */}
+<section className="hero" id="top">
         <div className="hero-glow glow-one" />
         <div className="hero-glow glow-two" />
 
@@ -125,7 +129,9 @@ export default function Home() {
           <span className="hero-bottom-line" />
           <span>DESIGN YOUR OWN STANDARD</span>
         </div>
-      </section>
+           </section>
+
+      <HomepageBanners page="homepage" placement="below_hero" />
 
       {/* TRUST BENEFITS */}
       <section className="trust-strip">
@@ -256,8 +262,10 @@ export default function Home() {
           </button>
         </div>
 
-        <CategoryTiles />
+              <CategoryTiles />
       </section>
+
+      <HomepageBanners page="homepage" placement="between_sections" />
 
       {/* BUILD IT YOURSELF — AFTER CATEGORIES */}
       
@@ -370,7 +378,10 @@ export default function Home() {
             <span>Gaming · Creation · Productivity</span>
           </div>
         </div>
-      </section>
+         </section>
+
+      <HomepageBanners page="homepage" placement="before_footer" />
+
     </div>
   );
 }

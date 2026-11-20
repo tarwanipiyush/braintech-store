@@ -1,0 +1,1396 @@
+{
+  "exportedAt": "2026-10-28T11:38:23.573Z",
+  "source": "src/data/products.js",
+  "categories": [
+    {
+      "name": "Processors",
+      "sortOrder": 1
+    },
+    {
+      "name": "Motherboards",
+      "sortOrder": 2
+    },
+    {
+      "name": "Graphic Cards",
+      "sortOrder": 3
+    },
+    {
+      "name": "PC Cabinet",
+      "sortOrder": 4
+    },
+    {
+      "name": "Power Supply",
+      "sortOrder": 5
+    },
+    {
+      "name": "CPU Cooler",
+      "sortOrder": 6
+    },
+    {
+      "name": "RAM",
+      "sortOrder": 7
+    },
+    {
+      "name": "SSD",
+      "sortOrder": 8
+    },
+    {
+      "name": "Mouse",
+      "sortOrder": 9
+    },
+    {
+      "name": "Keyboards",
+      "sortOrder": 10
+    },
+    {
+      "name": "Headphones",
+      "sortOrder": 11
+    },
+    {
+      "name": "Mousepad",
+      "sortOrder": 12
+    },
+    {
+      "name": "Monitors",
+      "sortOrder": 13
+    },
+    {
+      "name": "Laptops",
+      "sortOrder": 14
+    },
+    {
+      "name": "PC Builds",
+      "sortOrder": 15
+    }
+  ],
+  "products": [
+    {
+      "id": 101,
+      "name": "AMD Ryzen 5 7600 Desktop Processor",
+      "category": "Processors",
+      "price": 18999,
+      "oldPrice": 22999,
+      "image": "https://images.unsplash.com/photo-1555617981-dac3880eac6e?auto=format&fit=crop&w=900&q=85",
+      "tag": "Bestseller",
+      "rating": 4.6,
+      "description": "6-core desktop CPU concept for gaming and everyday creation.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 102,
+      "name": "AMD Ryzen 7 7800X3D Gaming Processor",
+      "category": "Processors",
+      "price": 36999,
+      "oldPrice": 42999,
+      "image": "https://images.unsplash.com/photo-1555617981-dac3880eac6e?auto=format&fit=crop&w=900&q=85",
+      "tag": "Gaming pick",
+      "rating": 4.7,
+      "description": "High-performance CPU concept for gaming-focused builds.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 103,
+      "name": "AMD Ryzen 9 9900X Processor",
+      "category": "Processors",
+      "price": 44999,
+      "oldPrice": 51999,
+      "image": "https://images.unsplash.com/photo-1555617981-dac3880eac6e?auto=format&fit=crop&w=900&q=85",
+      "tag": "Creator choice",
+      "rating": 4.8,
+      "description": "A powerful multi-core processor concept for demanding workloads.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 104,
+      "name": "Intel Core i5-14400F Processor",
+      "category": "Processors",
+      "price": 17999,
+      "oldPrice": 21999,
+      "image": "https://images.unsplash.com/photo-1555617981-dac3880eac6e?auto=format&fit=crop&w=900&q=85",
+      "tag": "Popular",
+      "rating": 4.9,
+      "description": "Balanced desktop processor concept for gaming and work.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 105,
+      "name": "Intel Core i7-14700K Processor",
+      "category": "Processors",
+      "price": 38999,
+      "oldPrice": 44999,
+      "image": "https://images.unsplash.com/photo-1555617981-dac3880eac6e?auto=format&fit=crop&w=900&q=85",
+      "tag": "Performance",
+      "rating": 4.5,
+      "description": "High-performance CPU concept for advanced desktop builds.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 106,
+      "name": "MSI B650M Gaming WiFi Motherboard",
+      "category": "Motherboards",
+      "price": 13999,
+      "oldPrice": 16999,
+      "image": "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=85",
+      "tag": "Popular",
+      "rating": 4.6,
+      "description": "AMD AM5 motherboard concept with modern connectivity.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 107,
+      "name": "Gigabyte B760M DS3H DDR5 Motherboard",
+      "category": "Motherboards",
+      "price": 11999,
+      "oldPrice": 14999,
+      "image": "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=85",
+      "tag": "Value pick",
+      "rating": 4.7,
+      "description": "Intel platform motherboard concept for compact builds.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 108,
+      "name": "ASUS TUF Gaming B650-Plus WiFi",
+      "category": "Motherboards",
+      "price": 21999,
+      "oldPrice": 25999,
+      "image": "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=85",
+      "tag": "Enthusiast",
+      "rating": 4.8,
+      "description": "Feature-rich motherboard concept for a premium AMD setup.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 109,
+      "name": "GeForce RTX 4060 8GB Graphics Card",
+      "category": "Graphic Cards",
+      "price": 29999,
+      "oldPrice": 34999,
+      "image": "https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=900&q=85",
+      "tag": "Bestseller",
+      "rating": 4.9,
+      "description": "Graphics card concept for 1080p gaming and creative applications.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 110,
+      "name": "GeForce RTX 4070 Super 12GB Graphics Card",
+      "category": "Graphic Cards",
+      "price": 62999,
+      "oldPrice": 69999,
+      "image": "https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=900&q=85",
+      "tag": "Performance",
+      "rating": 4.5,
+      "description": "Higher-tier graphics card concept for high-refresh gaming.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 111,
+      "name": "Radeon RX 7800 XT 16GB Graphics Card",
+      "category": "Graphic Cards",
+      "price": 49999,
+      "oldPrice": 56999,
+      "image": "https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=900&q=85",
+      "tag": "Hot pick",
+      "rating": 4.6,
+      "description": "Graphics card concept with generous memory for modern games.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 112,
+      "name": "GeForce RTX 3050 8GB Graphics Card",
+      "category": "Graphic Cards",
+      "price": 21999,
+      "oldPrice": 25999,
+      "image": "https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=900&q=85",
+      "tag": "Value pick",
+      "rating": 4.7,
+      "description": "Entry-level graphics upgrade concept for gaming PCs.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 113,
+      "name": "Cooler Master MasterBox Airflow Mid Tower",
+      "category": "PC Cabinet",
+      "price": 6499,
+      "oldPrice": 7999,
+      "image": "https://images.unsplash.com/photo-1587202372634-32705e3bf49c?auto=format&fit=crop&w=900&q=85",
+      "tag": "Airflow",
+      "rating": 4.8,
+      "description": "Mid-tower cabinet concept with a mesh front panel.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 114,
+      "name": "ANTEC VX310 ARGB Gaming Cabinet",
+      "category": "PC Cabinet",
+      "price": 4999,
+      "oldPrice": 6499,
+      "image": "https://images.unsplash.com/photo-1587202372634-32705e3bf49c?auto=format&fit=crop&w=900&q=85",
+      "tag": "RGB",
+      "rating": 4.9,
+      "description": "ARGB cabinet concept for a colourful gaming setup.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 115,
+      "name": "Lian Li O11 Dynamic Style Cabinet",
+      "category": "PC Cabinet",
+      "price": 12999,
+      "oldPrice": 15999,
+      "image": "https://images.unsplash.com/photo-1587202372634-32705e3bf49c?auto=format&fit=crop&w=900&q=85",
+      "tag": "Premium",
+      "rating": 4.5,
+      "description": "Showcase cabinet concept with a dual-chamber layout.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 116,
+      "name": "Cooler Master MWE 650W 80+ Bronze PSU",
+      "category": "Power Supply",
+      "price": 5499,
+      "oldPrice": 6999,
+      "image": "https://images.unsplash.com/photo-1625842268584-8f3296236761?auto=format&fit=crop&w=900&q=85",
+      "tag": "Reliable",
+      "rating": 4.6,
+      "description": "650W power supply concept for mainstream gaming builds.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 117,
+      "name": "Corsair RM750e 750W 80+ Gold PSU",
+      "category": "Power Supply",
+      "price": 9999,
+      "oldPrice": 11999,
+      "image": "https://images.unsplash.com/photo-1625842268584-8f3296236761?auto=format&fit=crop&w=900&q=85",
+      "tag": "Gold rated",
+      "rating": 4.7,
+      "description": "Fully modular power supply concept for a clean build.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 118,
+      "name": "Cooler Master 850W Gold Modular PSU",
+      "category": "Power Supply",
+      "price": 11999,
+      "oldPrice": 13999,
+      "image": "https://images.unsplash.com/photo-1625842268584-8f3296236761?auto=format&fit=crop&w=900&q=85",
+      "tag": "Upgrade pick",
+      "rating": 4.8,
+      "description": "Higher-wattage modular PSU concept for powerful components.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 119,
+      "name": "DeepCool AK400 CPU Air Cooler",
+      "category": "CPU Cooler",
+      "price": 2499,
+      "oldPrice": 3299,
+      "image": "https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?auto=format&fit=crop&w=900&q=85",
+      "tag": "Popular",
+      "rating": 4.9,
+      "description": "Compact tower air cooler concept for everyday performance.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 120,
+      "name": "Cooler Master Hyper 212 Spectrum V3",
+      "category": "CPU Cooler",
+      "price": 2999,
+      "oldPrice": 3999,
+      "image": "https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?auto=format&fit=crop&w=900&q=85",
+      "tag": "RGB",
+      "rating": 4.5,
+      "description": "Single-tower CPU cooler concept with RGB lighting.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 121,
+      "name": "Arctic Liquid Freezer III 360 AIO",
+      "category": "CPU Cooler",
+      "price": 11999,
+      "oldPrice": 14999,
+      "image": "https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?auto=format&fit=crop&w=900&q=85",
+      "tag": "Premium",
+      "rating": 4.6,
+      "description": "360mm liquid cooler concept for high-performance CPUs.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 122,
+      "name": "Corsair Vengeance 16GB DDR5 RAM",
+      "category": "RAM",
+      "price": 4499,
+      "oldPrice": 5499,
+      "image": "https://images.unsplash.com/photo-1562976540-1502c2145186?auto=format&fit=crop&w=900&q=85",
+      "tag": "Value pick",
+      "rating": 4.7,
+      "description": "16GB DDR5 memory kit concept for modern desktop systems.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 123,
+      "name": "Adata XPG Lancer Blade 32GB DDR5 RAM",
+      "category": "RAM",
+      "price": 7999,
+      "oldPrice": 9999,
+      "image": "https://images.unsplash.com/photo-1562976540-1502c2145186?auto=format&fit=crop&w=900&q=85",
+      "tag": "Bestseller",
+      "rating": 4.8,
+      "description": "32GB DDR5 memory kit concept for gaming and multitasking.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 124,
+      "name": "Kingston Fury Beast 64GB DDR5 RAM",
+      "category": "RAM",
+      "price": 15999,
+      "oldPrice": 18999,
+      "image": "https://images.unsplash.com/photo-1562976540-1502c2145186?auto=format&fit=crop&w=900&q=85",
+      "tag": "Creator choice",
+      "rating": 4.9,
+      "description": "High-capacity DDR5 memory concept for heavy workloads.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 125,
+      "name": "Kingston NV3 500GB NVMe SSD",
+      "category": "SSD",
+      "price": 2999,
+      "oldPrice": 3999,
+      "image": "https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?auto=format&fit=crop&w=900&q=85",
+      "tag": "Value pick",
+      "rating": 4.5,
+      "description": "Compact NVMe storage concept for OS and essential apps.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 126,
+      "name": "WD Blue SN580 1TB NVMe SSD",
+      "category": "SSD",
+      "price": 5999,
+      "oldPrice": 7499,
+      "image": "https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?auto=format&fit=crop&w=900&q=85",
+      "tag": "Bestseller",
+      "rating": 4.6,
+      "description": "1TB NVMe storage concept for games and projects.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 127,
+      "name": "Samsung 990 EVO 2TB NVMe SSD",
+      "category": "SSD",
+      "price": 12999,
+      "oldPrice": 15999,
+      "image": "https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?auto=format&fit=crop&w=900&q=85",
+      "tag": "Fast storage",
+      "rating": 4.7,
+      "description": "High-capacity NVMe storage concept for demanding users.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 128,
+      "name": "Logitech G502 Gaming Mouse",
+      "category": "Mouse",
+      "price": 3999,
+      "oldPrice": 4999,
+      "image": "https://images.unsplash.com/photo-1527814050087-3793815479db?auto=format&fit=crop&w=900&q=85",
+      "tag": "Popular",
+      "rating": 4.8,
+      "description": "Ergonomic gaming mouse concept with configurable controls.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 129,
+      "name": "Razer DeathAdder Essential Mouse",
+      "category": "Mouse",
+      "price": 1499,
+      "oldPrice": 1999,
+      "image": "https://images.unsplash.com/photo-1527814050087-3793815479db?auto=format&fit=crop&w=900&q=85",
+      "tag": "Value pick",
+      "rating": 4.9,
+      "description": "Lightweight wired gaming mouse concept for everyday play.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 130,
+      "name": "Wireless Precision Productivity Mouse",
+      "category": "Mouse",
+      "price": 2499,
+      "oldPrice": 3299,
+      "image": "https://images.unsplash.com/photo-1527814050087-3793815479db?auto=format&fit=crop&w=900&q=85",
+      "tag": "Work setup",
+      "rating": 4.5,
+      "description": "Wireless mouse concept for productivity and daily use.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 131,
+      "name": "Mechanical RGB Gaming Keyboard",
+      "category": "Keyboards",
+      "price": 3499,
+      "oldPrice": 4499,
+      "image": "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=900&q=85",
+      "tag": "RGB",
+      "rating": 4.6,
+      "description": "Mechanical keyboard concept with customizable backlighting.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 132,
+      "name": "Tenkeyless Hot-Swap Mechanical Keyboard",
+      "category": "Keyboards",
+      "price": 5999,
+      "oldPrice": 7499,
+      "image": "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=900&q=85",
+      "tag": "Enthusiast",
+      "rating": 4.7,
+      "description": "Compact keyboard concept for a flexible desk setup.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 133,
+      "name": "Wireless Multi-Device Keyboard",
+      "category": "Keyboards",
+      "price": 2299,
+      "oldPrice": 2999,
+      "image": "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=900&q=85",
+      "tag": "Productivity",
+      "rating": 4.8,
+      "description": "Wireless keyboard concept for work and study.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 134,
+      "name": "HyperX Cloud Stinger Gaming Headset",
+      "category": "Headphones",
+      "price": 3499,
+      "oldPrice": 4499,
+      "image": "https://images.unsplash.com/photo-1599669454699-248893623440?auto=format&fit=crop&w=900&q=85",
+      "tag": "Gaming pick",
+      "rating": 4.9,
+      "description": "Over-ear headset concept for gaming and voice chat.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 135,
+      "name": "Studio Monitoring Headphones",
+      "category": "Headphones",
+      "price": 6999,
+      "oldPrice": 8999,
+      "image": "https://images.unsplash.com/photo-1599669454699-248893623440?auto=format&fit=crop&w=900&q=85",
+      "tag": "Creator choice",
+      "rating": 4.5,
+      "description": "Closed-back headphone concept for editing and focused listening.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 136,
+      "name": "Wireless Gaming Headset with Mic",
+      "category": "Headphones",
+      "price": 5999,
+      "oldPrice": 7999,
+      "image": "https://images.unsplash.com/photo-1599669454699-248893623440?auto=format&fit=crop&w=900&q=85",
+      "tag": "Wireless",
+      "rating": 4.6,
+      "description": "Wireless headset concept for a clean gaming setup.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 137,
+      "name": "Extended RGB Desk Mousepad",
+      "category": "Mousepad",
+      "price": 999,
+      "oldPrice": 1499,
+      "image": "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Setup essential",
+      "rating": 4.7,
+      "description": "Large desk mat concept for mouse movement and desk protection.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 138,
+      "name": "Control Surface XL Gaming Mousepad",
+      "category": "Mousepad",
+      "price": 699,
+      "oldPrice": 999,
+      "image": "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Value pick",
+      "rating": 4.8,
+      "description": "Smooth extended mousepad concept for low-friction movement.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 139,
+      "name": "Gigabyte M27F 27-inch FHD 165Hz Monitor",
+      "category": "Monitors",
+      "price": 19079,
+      "oldPrice": 28500,
+      "image": "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=900&q=85",
+      "tag": "Monitor deal",
+      "rating": 4.9,
+      "description": "27-inch IPS gaming monitor concept with a high refresh rate.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 140,
+      "name": "Gigabyte GS27FC 27-inch FHD 180Hz Monitor",
+      "category": "Monitors",
+      "price": 12999,
+      "oldPrice": 17999,
+      "image": "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=900&q=85",
+      "tag": "Hot pick",
+      "rating": 4.5,
+      "description": "Curved gaming monitor concept for high-refresh play.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 141,
+      "name": "27-inch QHD 165Hz IPS Gaming Monitor",
+      "category": "Monitors",
+      "price": 21999,
+      "oldPrice": 27999,
+      "image": "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=900&q=85",
+      "tag": "Sharp visuals",
+      "rating": 4.6,
+      "description": "QHD monitor concept for detailed gaming and productivity.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 142,
+      "name": "Gigabyte Aorus FO27Q2 QD-OLED 240Hz Monitor",
+      "category": "Monitors",
+      "price": 62365,
+      "oldPrice": 168000,
+      "image": "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=900&q=85",
+      "tag": "Premium",
+      "rating": 4.7,
+      "description": "High-refresh OLED monitor concept for enthusiasts.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 143,
+      "name": "Performance Laptop 15-inch RTX Graphics",
+      "category": "Laptops",
+      "price": 84999,
+      "oldPrice": 94999,
+      "image": "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=900&q=85",
+      "tag": "Portable power",
+      "rating": 4.8,
+      "description": "Gaming laptop concept for portable performance.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 144,
+      "name": "Creator Laptop 16-inch High-Resolution Display",
+      "category": "Laptops",
+      "price": 99999,
+      "oldPrice": 114999,
+      "image": "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=900&q=85",
+      "tag": "Creator choice",
+      "rating": 4.9,
+      "description": "Creator laptop concept for editing and design workflows.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 145,
+      "name": "NeroX MY8 Custom Rendering PC",
+      "category": "PC Builds",
+      "price": 95799,
+      "oldPrice": 103763,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Creator build",
+      "rating": 4.5,
+      "description": "Illustrative custom workstation build with discrete graphics.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 146,
+      "name": "Gaming & Streaming PC — Ryzen Edition",
+      "category": "PC Builds",
+      "price": 74999,
+      "oldPrice": 84999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Bestseller",
+      "rating": 4.6,
+      "description": "Gaming desktop concept for streaming and competitive play.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 147,
+      "name": "Entry Gaming PC — RTX 3050 Edition",
+      "category": "PC Builds",
+      "price": 48371,
+      "oldPrice": 62169,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Value build",
+      "rating": 4.7,
+      "description": "Starter desktop build concept for gaming and general use.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 148,
+      "name": "Maya Rendering Workstation — RTX 5080 Class",
+      "category": "PC Builds",
+      "price": 249999,
+      "oldPrice": 279999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Workstation",
+      "rating": 4.8,
+      "description": "High-end workstation concept for rendering-heavy workflows.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 149,
+      "name": "Gaming & Streaming PC — Ryzen 5 RTX 4060",
+      "category": "PC Builds",
+      "price": 74999,
+      "oldPrice": 84999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Gaming Build",
+      "rating": 4.9,
+      "description": "Gaming PC concept for competitive gaming and entry-level streaming.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 150,
+      "name": "Gaming & Streaming PC — Ryzen 7 RTX 4070 Super",
+      "category": "PC Builds",
+      "price": 129999,
+      "oldPrice": 144999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Streamer Pick",
+      "rating": 4.5,
+      "description": "Gaming and streaming PC concept for high-refresh gameplay.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 151,
+      "name": "Gaming & Streaming PC — Intel Core i5 RTX 4060",
+      "category": "PC Builds",
+      "price": 79999,
+      "oldPrice": 89999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Intel Gaming",
+      "rating": 4.6,
+      "description": "Intel-based gaming PC concept for gaming and live broadcasts.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 152,
+      "name": "Gaming & Streaming PC — Ryzen 7 RX 7800 XT",
+      "category": "PC Builds",
+      "price": 119999,
+      "oldPrice": 134999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "AMD Gaming",
+      "rating": 4.7,
+      "description": "AMD gaming PC concept for high-resolution gameplay and streaming.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 153,
+      "name": "Gaming & Streaming PC — Ryzen 9 RTX 4080 Class",
+      "category": "PC Builds",
+      "price": 199999,
+      "oldPrice": 224999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Enthusiast",
+      "rating": 4.8,
+      "description": "Premium gaming and streaming workstation concept.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 154,
+      "name": "Video Editing PC — Ryzen 5 32GB Creator",
+      "category": "PC Builds",
+      "price": 79999,
+      "oldPrice": 89999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Creator Entry",
+      "rating": 4.9,
+      "description": "Video editing PC concept for Full HD editing and creator work.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 155,
+      "name": "Video Editing PC — Intel Core i7 RTX 4060",
+      "category": "PC Builds",
+      "price": 109999,
+      "oldPrice": 124999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Editing Pick",
+      "rating": 4.5,
+      "description": "Editing workstation concept for timelines, effects and multitasking.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 156,
+      "name": "Video Editing PC — Ryzen 7 RTX 4070 Super",
+      "category": "PC Builds",
+      "price": 149999,
+      "oldPrice": 164999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "4K Editing",
+      "rating": 4.6,
+      "description": "Creator PC concept for demanding 4K editing projects.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 157,
+      "name": "Video Editing PC — Intel Core i7 64GB Creator",
+      "category": "PC Builds",
+      "price": 139999,
+      "oldPrice": 154999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Multitasking",
+      "rating": 4.7,
+      "description": "Editing PC concept for large projects and multiple applications.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 158,
+      "name": "Video Editing PC — Ryzen 9 RTX 4080 Class",
+      "category": "PC Builds",
+      "price": 229999,
+      "oldPrice": 254999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Pro Creator",
+      "rating": 4.8,
+      "description": "High-performance video production workstation concept.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 159,
+      "name": "3D Generalist PC — Ryzen 5 RTX 4060",
+      "category": "PC Builds",
+      "price": 89999,
+      "oldPrice": 99999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "3D Starter",
+      "rating": 4.9,
+      "description": "3D workstation concept for modelling, texturing and previews.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 160,
+      "name": "3D Generalist PC — Ryzen 7 RTX 4070 Super",
+      "category": "PC Builds",
+      "price": 149999,
+      "oldPrice": 164999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "3D Creator",
+      "rating": 4.5,
+      "description": "3D workstation concept for modelling, rendering and animation.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 161,
+      "name": "3D Generalist PC — Intel Core i7 RTX 4070",
+      "category": "PC Builds",
+      "price": 154999,
+      "oldPrice": 169999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Studio Work",
+      "rating": 4.6,
+      "description": "3D workstation concept for creative studio workflows.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 162,
+      "name": "3D Generalist PC — Ryzen 9 64GB Creator",
+      "category": "PC Builds",
+      "price": 179999,
+      "oldPrice": 199999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Heavy Scenes",
+      "rating": 4.7,
+      "description": "Workstation concept for complex scenes and multitasking.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 163,
+      "name": "3D Generalist PC — Ryzen 9 RTX 5080 Class",
+      "category": "PC Builds",
+      "price": 279999,
+      "oldPrice": 309999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Advanced 3D",
+      "rating": 4.8,
+      "description": "High-end 3D workstation concept for demanding rendering.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 164,
+      "name": "Architectural PC — Ryzen 5 Design Workstation",
+      "category": "PC Builds",
+      "price": 84999,
+      "oldPrice": 94999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Architecture Entry",
+      "rating": 4.9,
+      "description": "Architecture workstation concept for CAD drawings and design.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 165,
+      "name": "Architectural PC — Intel Core i7 CAD Build",
+      "category": "PC Builds",
+      "price": 119999,
+      "oldPrice": 134999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "CAD Workstation",
+      "rating": 4.5,
+      "description": "Design PC concept for architectural drafting and models.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 166,
+      "name": "Architectural PC — Ryzen 7 RTX 4070",
+      "category": "PC Builds",
+      "price": 149999,
+      "oldPrice": 164999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "3D Visualization",
+      "rating": 4.6,
+      "description": "Architecture PC concept for 3D visualization and presentations.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 167,
+      "name": "Architectural PC — Ryzen 9 64GB Workstation",
+      "category": "PC Builds",
+      "price": 189999,
+      "oldPrice": 209999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Studio Architect",
+      "rating": 4.7,
+      "description": "Workstation concept for large architectural models.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 168,
+      "name": "Architectural PC — Ryzen 9 RTX 5080 Class",
+      "category": "PC Builds",
+      "price": 289999,
+      "oldPrice": 319999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Visualization Pro",
+      "rating": 4.8,
+      "description": "High-performance architectural visualization workstation concept.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 169,
+      "name": "3D Modelling PC — Ryzen 5 RTX 4060",
+      "category": "PC Builds",
+      "price": 89999,
+      "oldPrice": 99999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Modelling Starter",
+      "rating": 4.9,
+      "description": "3D modelling PC concept for basic sculpting and viewport work.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 170,
+      "name": "3D Modelling PC — Intel Core i5 RTX 4060",
+      "category": "PC Builds",
+      "price": 94999,
+      "oldPrice": 104999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Design Essential",
+      "rating": 4.5,
+      "description": "Modelling workstation concept for CAD and creative projects.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 171,
+      "name": "3D Modelling PC — Ryzen 7 RTX 4070 Super",
+      "category": "PC Builds",
+      "price": 149999,
+      "oldPrice": 164999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Modeller Pick",
+      "rating": 4.6,
+      "description": "3D workstation concept for detailed assets and larger scenes.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 172,
+      "name": "3D Modelling PC — Intel Core i7 64GB",
+      "category": "PC Builds",
+      "price": 159999,
+      "oldPrice": 174999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Complex Models",
+      "rating": 4.7,
+      "description": "Workstation concept for complex geometry and multitasking.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 173,
+      "name": "3D Modelling PC — Ryzen 9 RTX 5080 Class",
+      "category": "PC Builds",
+      "price": 279999,
+      "oldPrice": 309999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Pro Modelling",
+      "rating": 4.8,
+      "description": "Advanced workstation concept for demanding modelling and rendering.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 174,
+      "name": "VFX Animation PC — Ryzen 5 RTX 4060",
+      "category": "PC Builds",
+      "price": 99999,
+      "oldPrice": 109999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "VFX Starter",
+      "rating": 4.9,
+      "description": "VFX workstation concept for learning compositing and basic animation.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 175,
+      "name": "VFX Animation PC — Intel Core i7 RTX 4070",
+      "category": "PC Builds",
+      "price": 154999,
+      "oldPrice": 169999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Animation Pick",
+      "rating": 4.5,
+      "description": "Animation PC concept for scene work, effects and previews.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 176,
+      "name": "VFX Animation PC — Ryzen 7 RTX 4070 Super",
+      "category": "PC Builds",
+      "price": 164999,
+      "oldPrice": 179999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Effects Studio",
+      "rating": 4.6,
+      "description": "Workstation concept for animation, simulations and visual effects.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 177,
+      "name": "VFX Animation PC — Ryzen 9 64GB RTX 4080 Class",
+      "category": "PC Builds",
+      "price": 239999,
+      "oldPrice": 264999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "VFX Creator",
+      "rating": 4.7,
+      "description": "High-performance VFX workstation concept for heavier scenes.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 178,
+      "name": "VFX Animation PC — Ryzen 9 RTX 5080 Class",
+      "category": "PC Builds",
+      "price": 299999,
+      "oldPrice": 329999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "VFX Professional",
+      "rating": 4.8,
+      "description": "Premium workstation concept for demanding animation and effects.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 179,
+      "name": "Compositing PC — Ryzen 5 32GB Creator",
+      "category": "PC Builds",
+      "price": 84999,
+      "oldPrice": 94999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Compositing Entry",
+      "rating": 4.9,
+      "description": "Compositing PC concept for basic node-based workflows.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 180,
+      "name": "Compositing PC — Intel Core i7 RTX 4060",
+      "category": "PC Builds",
+      "price": 119999,
+      "oldPrice": 134999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Compositor Pick",
+      "rating": 4.5,
+      "description": "Workstation concept for layered compositions and motion graphics.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 181,
+      "name": "Compositing PC — Ryzen 7 RTX 4070 Super",
+      "category": "PC Builds",
+      "price": 154999,
+      "oldPrice": 169999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Studio Compositing",
+      "rating": 4.6,
+      "description": "Creator workstation concept for complex effects and compositing.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 182,
+      "name": "Compositing PC — Intel Core i7 64GB RTX 4070",
+      "category": "PC Builds",
+      "price": 174999,
+      "oldPrice": 189999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Memory Focus",
+      "rating": 4.7,
+      "description": "Workstation concept for high-resolution compositions and multitasking.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    },
+    {
+      "id": 183,
+      "name": "Compositing PC — Ryzen 9 RTX 5080 Class",
+      "category": "PC Builds",
+      "price": 289999,
+      "oldPrice": 319999,
+      "image": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85",
+      "tag": "Pro Compositing",
+      "rating": 4.8,
+      "description": "High-end compositing workstation concept for demanding production work.",
+      "features": [
+        "Demo catalog listing",
+        "Check platform compatibility before purchase",
+        "Verify final price, stock and warranty with the seller"
+      ]
+    }
+  ]
+}

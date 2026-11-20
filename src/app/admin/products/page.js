@@ -15,6 +15,7 @@ const TABS = [
   ["organisation", "Organisation"],
   ["pricing", "Pricing"],
   ["inventory", "Inventory"],
+  ["specifications", "Specifications"],
   ["variants", "Variants"],
   ["shipping", "Shipping"],
   ["seo", "SEO"],
@@ -79,6 +80,9 @@ function normalizeProduct(product, index = 0) {
     seoTitle: product.seoTitle || name,
     seoDescription: product.seoDescription || product.description || "",
     options: Array.isArray(product.options) ? product.options : [],
+    specifications: Array.isArray(product.specifications)
+  ? product.specifications
+  : [],
     variants: Array.isArray(product.variants) ? product.variants : [],
     createdAt: product.createdAt || new Date().toISOString(),
     updatedAt: product.updatedAt || "",
@@ -233,9 +237,235 @@ function compressImage(file) {
   });
 }
 
+
+const ADMIN_PRODUCTS_API = "/api/admin/products";
+
+function getAdminToken() {
+  return localStorage.getItem("braintech-admin-token") || "";
+}
+
+
+function getCategoryId(category) {
+  const categoryMap = {
+    processors: 1,
+    processor: 1,
+    cpu: 1,
+
+    motherboards: 2,
+    motherboard: 2,
+
+    "graphic cards": 3,
+    "graphics cards": 3,
+    "graphic card": 3,
+    "graphics card": 3,
+    gpu: 3,
+
+    "pc cabinet": 4,
+    cabinet: 4,
+    cabinets: 4,
+    "pc case": 4,
+
+    "power supply": 5,
+    "power supplies": 5,
+    psu: 5,
+
+    "cpu cooler": 6,
+    "cpu coolers": 6,
+
+    ram: 7,
+    memory: 7,
+
+    ssd: 8,
+    storage: 8,
+
+    mouse: 9,
+    mice: 9,
+
+    keyboards: 10,
+    keyboard: 10,
+
+    headphones: 11,
+    headphone: 11,
+
+    mousepad: 12,
+    mousepads: 12,
+
+    monitors: 13,
+    monitor: 13,
+
+    laptops: 14,
+    laptop: 14,
+
+    "pc builds": 15,
+    "pc build": 15,
+  };
+
+  const normalizedCategory = String(category || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ");
+
+  return categoryMap[normalizedCategory] ?? null;
+}
+
+
+function createDatabasePayload(product) {
+  const image = String(product.image || "");
+
+  return {
+    name: product.name.trim(),
+
+    slug:
+      product.handle ||
+      product.name
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, ""),
+
+    sku: product.sku || null,
+
+    brand: product.vendor || null,
+
+    short_description: product.description || "",
+
+    description: product.description || "",
+
+    category_id: getCategoryId(product.category),
+
+    price: Number(product.price) || 0,
+
+    compare_at_price:
+      Number(product.oldPrice) > 0
+        ? Number(product.oldPrice)
+        : null,
+
+    cost_price:
+      Number(product.cost) > 0
+        ? Number(product.cost)
+        : null,
+
+    stock_quantity: Math.max(
+      0,
+      Number(product.stock) || 0
+    ),
+
+    low_stock_threshold: 5,
+
+    // Hostinger stores image URLs, not browser data URLs.
+    image_url:
+      image.startsWith("data:")
+        ? null
+        : image || null,
+
+    is_featured: Boolean(product.isFeatured),
+
+    is_special_offer:
+      Boolean(product.isSpecialOffer) ||
+      product.tag === "Special Offer",
+
+    is_active:
+      product.status === "Active" &&
+      product.published !== false,
+      specifications: Array.isArray(product.specifications)
+  ? product.specifications
+  : [],
+  };
+}
+
+async function saveProductToDatabase(product, databaseId) {
+  const token = getAdminToken();
+
+  if (!token) {
+    throw new Error("Admin session expired. Please log in again.");
+  }
+
+  const isEditingDatabaseProduct = Boolean(databaseId);
+
+  const response = await fetch(ADMIN_PRODUCTS_API, {
+    method: isEditingDatabaseProduct ? "PUT" : "POST",
+
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+
+    body: JSON.stringify({
+      ...(isEditingDatabaseProduct
+        ? { id: Number(databaseId) }
+        : {}),
+
+      ...createDatabasePayload(product),
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok || !data.success) {
+    throw new Error(
+      data.message || "Failed to save product to Hostinger."
+    );
+  }
+
+  return {
+    ...product,
+    id: Number(data.id || databaseId),
+    dbId: Number(data.id || databaseId),
+  };
+}
+
+
+async function deleteProductFromDatabase(product) {
+  const token = getAdminToken();
+
+  if (!token) {
+    throw new Error("Admin session expired. Please log in again.");
+  }
+
+  const databaseId = product.dbId || product.id;
+
+  if (
+    !Number.isInteger(Number(databaseId)) ||
+    Number(databaseId) < 1
+  ) {
+    throw new Error(
+      `Invalid database ID for product "${product.name}".`
+    );
+  }
+
+  const response = await fetch(ADMIN_PRODUCTS_API, {
+    method: "DELETE",
+
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+
+    body: JSON.stringify({
+      id: Number(databaseId),
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok || !data.success) {
+    throw new Error(
+      data.message || `Failed to delete "${product.name}".`
+    );
+  }
+
+  return true;
+}
+
+
 export default function AdminProductsPage() {
+  const [saving, setSaving] = useState(false);
   const [items, setItems] = useState([]);
   const [ready, setReady] = useState(false);
+  const [databaseCategories, setDatabaseCategories] = useState([]);
 
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All categories");
@@ -250,30 +480,93 @@ export default function AdminProductsPage() {
   const [formError, setFormError] = useState("");
   const [activeTab, setActiveTab] = useState("general");
   const [imageBusy, setImageBusy] = useState(false);
+  const activeCategorySpecifications =
+  databaseCategories.find(
+    (item) =>
+      String(item.name).toLowerCase() ===
+      String(editing?.category || "").toLowerCase()
+  )?.specification_fields || [];
 
-  // Load saved catalogue, or use the starter products on first visit.
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+    let cancelled = false;
 
-      if (saved !== null) {
-        const parsed = JSON.parse(saved);
+    async function loadProducts() {
+      try {
+        const token = localStorage.getItem("braintech-admin-token");
 
-        if (Array.isArray(parsed)) {
-          setItems(parsed.map(normalizeProduct));
-        } else {
-          setItems(seedProducts.map(normalizeProduct));
+        if (!token) {
+          throw new Error("Admin session not found. Please log in again.");
         }
-      } else {
-        setItems(seedProducts.map(normalizeProduct));
+
+        const response = await fetch("/api/admin/products", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+          cache: "no-store",
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(
+            data.message || "Unable to load products."
+          );
+        }
+        setDatabaseCategories(
+  Array.isArray(data.categories) ? data.categories : []
+);
+
+        if (!Array.isArray(data.products)) {
+          throw new Error("Hostinger returned an invalid products list.");
+        }
+
+        const databaseProducts = data.products.map((product) =>
+          normalizeProduct({
+            ...product,
+            id: product.id,
+            category: product.category || "Other",
+            price: product.price,
+            oldPrice: product.compare_at_price,
+            image: product.image_url,
+            vendor: product.brand,
+            handle: product.slug,
+            stock: product.stock_quantity,
+            cost: product.cost_price,
+            status: Number(product.is_active) === 1 ? "Active" : "Draft",
+            published: Number(product.is_active) === 1,
+            specifications: Array.isArray(product.specifications)
+  ? product.specifications
+  : [],
+          })
+        );
+
+        if (!cancelled) {
+          setItems(databaseProducts);
+        }
+      } catch (error) {
+        console.error("Hostinger products loading error:", error);
+
+        if (!cancelled) {
+          setFormError(
+            error.message || "Unable to load products from Hostinger."
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setReady(true);
+        }
       }
-    } catch (error) {
-      console.error("Failed to load admin products:", error);
-      setItems(seedProducts.map(normalizeProduct));
-    } finally {
-      setReady(true);
     }
+
+    loadProducts();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
 
   // Persist changes made by bulk actions, deletion, and reset.
   useEffect(() => {
@@ -425,172 +718,359 @@ export default function AdminProductsPage() {
     );
   }
 
-  async function handleImageUpload(event) {
-    const file = event.target.files?.[0];
 
-    // Allow selecting the same file again after replacing it.
-    event.target.value = "";
+async function handleImageUpload(event) {
+  const file = event.target.files?.[0];
 
-    if (!file) return;
+  // Allow selecting the same file again.
+  event.target.value = "";
 
-    setImageBusy(true);
-    setFormError("");
+  if (!file) return;
 
-    try {
-      const compressedImage = await compressImage(file);
+  setImageBusy(true);
+  setFormError("");
 
-      setEditing((previous) =>
-        previous ? { ...previous, image: compressedImage } : previous
-      );
+  try {
+    // Keep your existing image compression.
+    const compressedImage = await compressImage(file);
 
-      setNotice("Image selected. Save the product to keep the change.");
-    } catch (error) {
-      setFormError(error.message || "Could not upload this image.");
-    } finally {
-      setImageBusy(false);
+    // Convert compressed data URL back into a file.
+    const response = await fetch(compressedImage);
+    const blob = await response.blob();
+
+    const imageFile = new File(
+      [blob],
+      file.name.replace(/\.[^.]+$/, "") + ".jpg",
+      { type: "image/jpeg" }
+    );
+
+    // Send image to the Next.js upload API.
+    const uploadForm = new FormData();
+    uploadForm.append("image", imageFile);
+
+    const token = getAdminToken();
+
+    if (!token) {
+      throw new Error("Admin session expired. Please log in again.");
     }
+
+    const uploadResponse = await fetch(
+      "/api/admin/upload-image",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: uploadForm,
+      }
+    );
+
+    const uploadData = await uploadResponse.json();
+
+    if (!uploadResponse.ok || !uploadData.success) {
+      throw new Error(
+        uploadData.message || "Image upload failed."
+      );
+    }
+
+    if (!uploadData.image_url) {
+      throw new Error("Hostinger did not return an image URL.");
+    }
+
+    // Store the permanent Hostinger URL in the product form.
+    setEditing((previous) =>
+      previous
+        ? {
+            ...previous,
+            image: uploadData.image_url,
+          }
+        : previous
+    );
+
+    setNotice("Product image uploaded successfully.");
+  } catch (error) {
+    console.error("BrainTech image upload error:", error);
+
+    setFormError(
+      error.message || "Could not upload product image."
+    );
+  } finally {
+    setImageBusy(false);
+  }
+}
+
+async function saveProduct(event) {
+  event.preventDefault();
+  setFormError("");
+
+  if (!editing) return;
+
+  const form = new FormData(event.currentTarget);
+
+  const name = String(form.get("name") || "").trim();
+  const priceText = String(form.get("price") ?? "").trim();
+  const stockText = String(form.get("stock") ?? "").trim();
+  const costText = String(form.get("cost") ?? "").trim();
+  const weightText = String(form.get("weight") ?? "").trim();
+
+  const price = Number(priceText);
+  const oldPrice = Number(form.get("oldPrice") || 0);
+  const stock = Number(stockText);
+  const cost = Number(costText || 0);
+  const weight = Number(weightText || 0);
+
+  if (!name) {
+    setFormError("Enter a product title.");
+    setActiveTab("general");
+    return;
   }
 
-  function saveProduct(event) {
-    event.preventDefault();
-    setFormError("");
+  if (priceText === "" || !Number.isFinite(price) || price < 0) {
+    setFormError("Enter a valid selling price.");
+    setActiveTab("pricing");
+    return;
+  }
 
-    if (!editing) return;
+  if (!Number.isFinite(oldPrice) || oldPrice < 0) {
+    setFormError("Enter a valid compare-at price.");
+    setActiveTab("pricing");
+    return;
+  }
 
-    // All tabs remain mounted. FormData can read values from inactive tabs.
-    const form = new FormData(event.currentTarget);
+  if (stockText === "" || !Number.isInteger(stock) || stock < 0) {
+    setFormError(
+      "Stock must be a whole number greater than or equal to zero."
+    );
+    setActiveTab("inventory");
+    return;
+  }
 
-    const name = String(form.get("name") || "").trim();
-    const priceText = String(form.get("price") ?? "").trim();
-    const stockText = String(form.get("stock") ?? "").trim();
-    const costText = String(form.get("cost") ?? "").trim();
-    const weightText = String(form.get("weight") ?? "").trim();
+  if (!Number.isFinite(cost) || cost < 0) {
+    setFormError("Enter a valid product cost.");
+    setActiveTab("pricing");
+    return;
+  }
 
-    const price = Number(priceText);
-    const oldPrice = Number(form.get("oldPrice") || 0);
-    const stock = Number(stockText);
-    const cost = Number(costText || 0);
-    const weight = Number(weightText || 0);
+  if (!Number.isFinite(weight) || weight < 0) {
+    setFormError("Enter a valid shipping weight.");
+    setActiveTab("shipping");
+    return;
+  }
 
-    if (!name) {
-      setFormError("Enter a product title.");
-      setActiveTab("general");
-      return;
-    }
-
-    if (priceText === "" || !Number.isFinite(price) || price < 0) {
-      setFormError("Enter a valid selling price.");
-      setActiveTab("pricing");
-      return;
-    }
-
-    if (!Number.isFinite(oldPrice) || oldPrice < 0) {
-      setFormError("Enter a valid compare-at price.");
-      setActiveTab("pricing");
-      return;
-    }
-
-    if (stockText === "" || !Number.isInteger(stock) || stock < 0) {
-      setFormError("Stock must be a whole number greater than or equal to zero.");
-      setActiveTab("inventory");
-      return;
-    }
-
-    if (!Number.isFinite(cost) || cost < 0) {
-      setFormError("Enter a valid product cost.");
-      setActiveTab("pricing");
-      return;
-    }
-
-    if (!Number.isFinite(weight) || weight < 0) {
-      setFormError("Enter a valid shipping weight.");
-      setActiveTab("shipping");
-      return;
-    }
-
-    const existingId = editing.id !== "" && editing.id != null
+  const existingId =
+    editing.id !== "" && editing.id != null
       ? editing.id
       : null;
 
-    const handle = slugify(form.get("handle") || name);
+  const baseHandle = slugify(form.get("handle") || name);
 
-    if (!handle) {
-      setFormError("Enter a valid URL handle.");
-      setActiveTab("organisation");
-      return;
-    }
+  if (!baseHandle) {
+    setFormError("Enter a valid URL handle.");
+    setActiveTab("organisation");
+    return;
+  }
 
-    const duplicateHandle = items.some(
+  let handle = baseHandle;
+  let suffix = 2;
+
+  while (
+    items.some(
       (product) =>
         product.handle === handle &&
         String(product.id) !== String(existingId)
+    )
+  ) {
+    handle = `${baseHandle}-${suffix}`;
+    suffix++;
+  }
+
+  let options;
+  let variants;
+
+  try {
+    options = parseJsonField(
+      form.get("optionsJson"),
+      "Product options"
     );
 
-    if (duplicateHandle) {
-      setFormError("That URL handle is already in use. Choose another.");
-      setActiveTab("organisation");
+    variants = parseJsonField(
+      form.get("variantsJson"),
+      "Product variants"
+    );
+  } catch (error) {
+    setFormError(error.message);
+    setActiveTab("variants");
+    return;
+  }
+
+  const rawStatus = String(form.get("status") || "Draft");
+  const published = form.get("published") === "true";
+
+  const selectedCategory = String(
+    form.get("category") || "Other"
+  );
+
+  const selectedCategoryFields =
+    databaseCategories.find(
+      (item) =>
+        String(item.name).toLowerCase() ===
+        selectedCategory.toLowerCase()
+    )?.specification_fields || [];
+
+  const specifications = [];
+
+  for (const field of selectedCategoryFields) {
+    const rawValue = form.get(`specification_${field.id}`);
+    const value = String(rawValue ?? "").trim();
+
+    if (Number(field.is_required) === 1 && value === "") {
+      setFormError(`Please enter ${field.field_label}.`);
+      setActiveTab("specifications");
       return;
     }
 
-    let options;
-    let variants;
+    if (value !== "") {
+      if (
+        field.input_type === "number" &&
+        !Number.isFinite(Number(value))
+      ) {
+        setFormError(`Enter a valid number for ${field.field_label}.`);
+        setActiveTab("specifications");
+        return;
+      }
 
-    try {
-      options = parseJsonField(form.get("optionsJson"), "Product options");
-      variants = parseJsonField(form.get("variantsJson"), "Product variants");
-    } catch (error) {
-      setFormError(error.message);
-      setActiveTab("variants");
-      return;
+      specifications.push({
+        field_id: Number(field.id),
+        value,
+      });
     }
+  }
 
-    const rawStatus = String(form.get("status") || "Draft");
-    const published = form.get("published") === "true";
 
-    const numericIds = items
-      .map((product) => Number(product.id))
-      .filter(Number.isFinite);
+  const numericIds = items
+    .map((product) => Number(product.id))
+    .filter(Number.isFinite);
 
-    const id =
-      existingId ??
-      Math.max(Date.now(), ...numericIds.map((value) => value + 1), 1);
+  const id =
+    existingId ??
+    Math.max(Date.now(), ...numericIds.map((value) => value + 1), 1);
 
-    const product = normalizeProduct(
-      {
-        ...editing,
-        id,
+  const product = normalizeProduct(
+    {
+      ...editing,
+
+      id,
+
+      name,
+
+     category: selectedCategory,
+
+specifications,
+
+      price,
+
+      oldPrice,
+
+      image: editing.image || "",
+
+      tag: String(form.get("tag") || "").trim(),
+
+      description: String(
+        form.get("description") || ""
+      ).trim(),
+
+      vendor: String(
+        form.get("vendor") || ""
+      ).trim(),
+
+      productType: String(
+        form.get("productType") || ""
+      ).trim(),
+
+      tags: String(form.get("tags") || "")
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean),
+
+      handle,
+
+      sku:
+        String(form.get("sku") || "").trim() ||
+        `BT-${id}`,
+
+      barcode: String(
+        form.get("barcode") || ""
+      ).trim(),
+
+      cost,
+
+      stock,
+
+      status: rawStatus,
+
+      published:
+        rawStatus === "Active" && published,
+
+      taxable: form.get("taxable") === "on",
+
+      requiresShipping:
+        form.get("requiresShipping") === "on",
+
+      weight,
+
+      weightUnit: String(
+        form.get("weightUnit") || "kg"
+      ),
+
+      seoTitle:
+        String(form.get("seoTitle") || "").trim() ||
         name,
-        category: String(form.get("category") || "Other"),
-        price,
-        oldPrice,
-        // The image comes from the uploaded image state, not an image URL.
-        image: editing.image || "",
-        tag: String(form.get("tag") || "").trim(),
-        description: String(form.get("description") || "").trim(),
-        vendor: String(form.get("vendor") || "").trim(),
-        productType: String(form.get("productType") || "").trim(),
-        tags: String(form.get("tags") || "")
-          .split(",")
-          .map((tag) => tag.trim())
-          .filter(Boolean),
-        handle,
-        sku: String(form.get("sku") || "").trim() || `BT-${id}`,
-        barcode: String(form.get("barcode") || "").trim(),
-        cost,
-        stock,
-        status: rawStatus,
-        published: rawStatus === "Active" && published,
-        taxable: form.get("taxable") === "on",
-        requiresShipping: form.get("requiresShipping") === "on",
-        weight,
-        weightUnit: String(form.get("weightUnit") || "kg"),
-        seoTitle: String(form.get("seoTitle") || "").trim() || name,
-        seoDescription:
-          String(form.get("seoDescription") || "").trim() ||
-          String(form.get("description") || "").trim(),
-        options,
-        variants,
-        createdAt: editing.createdAt || new Date().toISOString(),
+
+      seoDescription:
+        String(form.get("seoDescription") || "").trim() ||
+        String(form.get("description") || "").trim(),
+
+      options,
+
+      variants,
+
+      createdAt:
+        editing.createdAt ||
+        new Date().toISOString(),
+
+      updatedAt: new Date().toISOString(),
+    },
+    items.length
+  );
+
+  // Existing database products use their database ID.
+  // New products are inserted into Hostinger.
+  const databaseId = editing.dbId || (
+    existingId &&
+    Number.isInteger(Number(existingId)) &&
+    Number(existingId) < 1000000000000
+      ? existingId
+      : null
+  );
+
+  try {
+    setSaving(true);
+
+    const savedProduct = await saveProductToDatabase(
+      product,
+      databaseId
+    );
+
+    // Keep the database-generated ID after inserting a new product.
+    const finalProduct = normalizeProduct(
+      {
+        ...product,
+        ...savedProduct,
+        id: savedProduct.id,
+        dbId: savedProduct.dbId || savedProduct.id,
+        createdAt:
+          product.createdAt ||
+          new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       },
       items.length
@@ -598,34 +1078,55 @@ export default function AdminProductsPage() {
 
     const updatedItems = existingId
       ? items.map((item) =>
-          String(item.id) === String(existingId) ? product : item
+          String(item.id) === String(existingId)
+            ? finalProduct
+            : item
         )
-      : [product, ...items];
+      : [finalProduct, ...items];
 
-    // Verify browser storage before updating the visible catalogue.
+    // Save a local cache only after Hostinger confirms success.
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedItems));
-    } catch (error) {
-      console.error("Could not save products:", error);
-      setFormError(
-        "Browser storage is full or unavailable. Try a smaller image. Permanent image storage will be configured with the backend."
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(updatedItems)
       );
-      return;
+    } catch (storageError) {
+      console.error(
+        "Product saved to database, but local cache failed:",
+        storageError
+      );
     }
 
     setItems(updatedItems);
-    setSelected((previous) => previous.filter((selectedId) =>
-      updatedItems.some((item) => item.id === selectedId)
-    ));
+
+    setSelected((previous) =>
+      previous.filter((selectedId) =>
+        updatedItems.some(
+          (item) =>
+            String(item.id) === String(selectedId)
+        )
+      )
+    );
 
     setNotice(
-      existingId
+      databaseId
         ? "Product and metadata updated."
         : "Product created successfully."
     );
 
     closeForm();
+  } catch (error) {
+    console.error("Product save failed:", error);
+
+    setFormError(
+      error.message ||
+        "Unable to save product to Hostinger."
+    );
+  } finally {
+    setSaving(false);
   }
+}
+
 
   function changeStatusForSelected(nextStatus) {
     if (!selected.length) return;
@@ -650,41 +1151,103 @@ export default function AdminProductsPage() {
     setNotice(`${count} selected product(s) updated.`);
   }
 
-  function deleteSelected() {
-    if (!selected.length) return;
+async function deleteSelected() {
+  if (!selected.length) return;
 
-    if (
-      !window.confirm(
-        `Delete ${selected.length} selected product(s)? This cannot be undone.`
-      )
-    ) {
-      return;
-    }
+  const productsToDelete = items.filter((product) =>
+    selected.some(
+      (id) => String(id) === String(product.id)
+    )
+  );
 
-    setItems((previous) =>
-      previous.filter((product) => !selected.includes(product.id))
-    );
-    setSelected([]);
-    setNotice("Selected products deleted.");
+  if (!productsToDelete.length) return;
+
+  if (
+    !window.confirm(
+      `Delete ${productsToDelete.length} selected product(s)? This cannot be undone.`
+    )
+  ) {
+    return;
   }
 
-  function deleteOne(product) {
-    if (
-      !window.confirm(
-        `Delete "${product.name}" from the admin catalogue?`
-      )
-    ) {
-      return;
-    }
+  const deletedIds = [];
+  const failedProducts = [];
 
+  for (const product of productsToDelete) {
+    try {
+      await deleteProductFromDatabase(product);
+
+      deletedIds.push(String(product.id));
+    } catch (error) {
+      console.error(
+        `Failed to delete product "${product.name}":`,
+        error
+      );
+
+      failedProducts.push(product.name);
+    }
+  }
+
+  if (deletedIds.length > 0) {
     setItems((previous) =>
-      previous.filter((item) => item.id !== product.id)
+      previous.filter(
+        (product) =>
+          !deletedIds.includes(String(product.id))
+      )
     );
+
     setSelected((previous) =>
-      previous.filter((id) => id !== product.id)
+      previous.filter(
+        (id) => !deletedIds.includes(String(id))
+      )
     );
-    setNotice("Product deleted.");
   }
+
+  if (failedProducts.length === 0) {
+    setNotice(
+      `${deletedIds.length} product(s) deleted successfully.`
+    );
+  } else {
+    setNotice(
+      `${deletedIds.length} deleted. ${failedProducts.length} failed: ${failedProducts.join(", ")}`
+    );
+  }
+}
+
+
+async function deleteOne(product) {
+  if (
+    !window.confirm(
+      `Delete "${product.name}" from the admin catalogue?`
+    )
+  ) {
+    return;
+  }
+
+  try {
+    await deleteProductFromDatabase(product);
+
+    setItems((previous) =>
+      previous.filter(
+        (item) => String(item.id) !== String(product.id)
+      )
+    );
+
+    setSelected((previous) =>
+      previous.filter(
+        (id) => String(id) !== String(product.id)
+      )
+    );
+
+    setNotice("Product deleted successfully.");
+  } catch (error) {
+    console.error("Product deletion failed:", error);
+
+    setNotice(
+      error.message || "Unable to delete product."
+    );
+  }
+}
 
   function resetCatalogue() {
     if (
@@ -1252,6 +1815,95 @@ export default function AdminProductsPage() {
                         />
                       </Field>
                     </div>
+                  </Section>
+                </div>
+
+                <div hidden={activeTab !== "specifications"}>
+                  <Section
+                    title="Product specifications"
+                    description="These fields are automatically loaded from the selected product category."
+                  >
+                    {activeCategorySpecifications.length === 0 ? (
+                      <p className="products-admin-inline-note">
+                        No specification fields are configured for this
+                        category yet.
+                      </p>
+                    ) : (
+                      <div className="products-admin-form-grid">
+                        {activeCategorySpecifications.map((field) => {
+                          const existingValue =
+                            editing.specifications?.find(
+                              (spec) =>
+                                Number(spec.field_id) === Number(field.id)
+                            )?.value ?? "";
+
+                          let options = [];
+
+                          try {
+                            options = Array.isArray(field.options_json)
+                              ? field.options_json
+                              : JSON.parse(field.options_json || "[]");
+                          } catch {
+                            options = [];
+                          }
+
+                          return (
+                            <Field
+                              key={field.id}
+                              label={`${field.field_label}${Number(field.is_required) === 1 ? " *" : ""}`}
+                              hint={field.unit_label || ""}
+                            >
+                              {field.input_type === "textarea" ? (
+                                <textarea
+                                  name={`specification_${field.id}`}
+                                  rows="3"
+                                  defaultValue={existingValue}
+                                  placeholder={`Enter ${field.field_label.toLowerCase()}`}
+                                  required={Number(field.is_required) === 1}
+                                />
+                              ) : field.input_type === "select" ? (
+                                <select
+                                  name={`specification_${field.id}`}
+                                  defaultValue={existingValue}
+                                  required={Number(field.is_required) === 1}
+                                >
+                                  <option value="">Select {field.field_label}</option>
+                                  {options.map((option, index) => (
+                                    <option
+                                      key={index}
+                                      value={option}
+                                    >
+                                      {option}
+                                    </option>
+                                  ))}
+                                </select>
+                              ) : field.input_type === "boolean" ? (
+                                <select
+                                  name={`specification_${field.id}`}
+                                  defaultValue={existingValue}
+                                >
+                                  <option value="">Select</option>
+                                  <option value="1">Yes</option>
+                                  <option value="0">No</option>
+                                </select>
+                              ) : (
+                                <input
+                                  type={
+                                    field.input_type === "number"
+                                      ? "number"
+                                      : "text"
+                                  }
+                                  name={`specification_${field.id}`}
+                                  defaultValue={existingValue}
+                                  placeholder={`Enter ${field.field_label.toLowerCase()}`}
+                                  required={Number(field.is_required) === 1}
+                                />
+                              )}
+                            </Field>
+                          );
+                        })}
+                      </div>
+                    )}
                   </Section>
                 </div>
 

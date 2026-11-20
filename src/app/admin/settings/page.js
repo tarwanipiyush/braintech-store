@@ -4,8 +4,6 @@
 import { useEffect, useState } from "react";
 import "../admin.css";
 
-const STORAGE_KEY = "braintech-admin-settings-v1";
-
 const defaultSettings = {
   storeName: "BrainTech Store",
   storeEmail: "",
@@ -17,7 +15,7 @@ const defaultSettings = {
   country: "India",
   currency: "INR",
   freeShippingThreshold: "5000",
-  standardShipping: "99",
+  standardShipping: "0",
   estimatedDelivery: "3–7 business days",
   taxEnabled: false,
   taxRate: "18",
@@ -25,38 +23,91 @@ const defaultSettings = {
   maintenanceMode: false,
 };
 
+async function settingsRequest(method = "GET", body = null) {
+  const token = localStorage.getItem("braintech-admin-token");
+
+  if (!token) {
+    throw new Error("Admin session not found. Please log in again.");
+  }
+
+  const response = await fetch("/api/admin/settings", {
+    method,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+    ...(body ? { body: JSON.stringify({ settings: body }) } : {}),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok || !data.success) {
+    throw new Error(
+      data.message || "Unable to process store settings."
+    );
+  }
+
+  return data;
+}
+
 export default function AdminSettingsPage() {
   const [settings, setSettings] = useState(defaultSettings);
   const [loaded, setLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [activeSection, setActiveSection] = useState("store");
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+    let cancelled = false;
 
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setSettings({ ...defaultSettings, ...parsed });
+    async function loadSettings() {
+      try {
+        const data = await settingsRequest("GET");
+
+        if (!cancelled) {
+          setSettings({
+            ...defaultSettings,
+            ...data.settings,
+          });
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err.message || "Could not load settings.");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoaded(true);
+        }
       }
-    } catch {
-      setError("Could not load saved settings from this browser.");
-    } finally {
-      setLoaded(true);
     }
+
+    loadSettings();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   function updateField(field, value) {
-    setSettings((current) => ({ ...current, [field]: value }));
+    setSettings((current) => ({
+      ...current,
+      [field]: value,
+    }));
+
     setMessage("");
     setError("");
   }
 
-  function saveSettings(event) {
+  async function saveSettings(event) {
     event.preventDefault();
+
     setMessage("");
     setError("");
+
+    if (saving) return;
 
     if (!settings.storeName.trim()) {
       setError("Please enter a store name.");
@@ -99,34 +150,57 @@ export default function AdminSettingsPage() {
       return;
     }
 
+    setSaving(true);
+
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-      setMessage("Settings saved successfully in this browser.");
-    } catch {
-      setError("Could not save settings. Check available browser storage.");
+      const data = await settingsRequest("PUT", settings);
+
+      setSettings({
+        ...defaultSettings,
+        ...data.settings,
+      });
+
+      setMessage("Settings saved successfully to the database.");
+    } catch (err) {
+      setError(err.message || "Could not save settings.");
+    } finally {
+      setSaving(false);
     }
   }
 
-  function resetSettings() {
+  async function resetSettings() {
     const confirmed = window.confirm(
-      "Reset all settings to their default values? Your saved settings will be replaced."
+      "Reset all store settings to their default values in the database? This will affect the shared store configuration."
     );
 
-    if (!confirmed) return;
+    if (!confirmed || saving) return;
 
-    setSettings(defaultSettings);
+    setMessage("");
+    setError("");
+    setSaving(true);
 
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultSettings));
-      setMessage("Settings have been reset to defaults.");
-      setError("");
-    } catch {
-      setError("Could not save the default settings.");
+      const data = await settingsRequest("PUT", defaultSettings);
+
+      setSettings({
+        ...defaultSettings,
+        ...data.settings,
+      });
+
+      setMessage("Store settings have been reset successfully.");
+    } catch (err) {
+      setError(err.message || "Could not reset settings.");
+    } finally {
+      setSaving(false);
     }
   }
 
   if (!loaded) {
-    return <main className="store-settings-page">Loading settings...</main>;
+    return (
+      <main className="store-settings-page">
+        Loading settings from the database...
+      </main>
+    );
   }
 
   const sections = [
@@ -142,7 +216,7 @@ export default function AdminSettingsPage() {
         <div>
           <p className="store-settings-eyebrow">STORE CONFIGURATION</p>
           <h1>Settings</h1>
-          <p>Manage your BrainTech Store preferences.</p>
+          <p>Manage your BrainTech Store configuration.</p>
         </div>
 
         <div className="store-settings-header-actions">
@@ -150,6 +224,7 @@ export default function AdminSettingsPage() {
             type="button"
             className="store-settings-btn secondary"
             onClick={resetSettings}
+            disabled={saving}
           >
             Reset defaults
           </button>
@@ -158,25 +233,33 @@ export default function AdminSettingsPage() {
             type="submit"
             form="store-settings-form"
             className="store-settings-btn primary"
+            disabled={saving}
           >
-            Save settings
+            {saving ? "Saving..." : "Save settings"}
           </button>
         </div>
       </header>
 
       <div className="store-settings-notice">
-        <strong>Local settings</strong>
+        <strong>Connected to database</strong>
         <span>
-          These settings are stored in this browser only. They do not change
-          live checkout, shipping, taxes, or storefront behaviour yet.
+          Settings are loaded from and saved to the shared BrainTech Store
+          database. Customer-facing behaviour still depends on the relevant
+          checkout and order API integrations.
         </span>
       </div>
 
       {message && (
-        <div className="store-settings-success">{message}</div>
+        <div className="store-settings-success" role="status">
+          {message}
+        </div>
       )}
 
-      {error && <div className="store-settings-error">{error}</div>}
+      {error && (
+        <div className="store-settings-error" role="alert">
+          {error}
+        </div>
+      )}
 
       <div className="store-settings-layout">
         <nav className="store-settings-nav" aria-label="Settings sections">
@@ -305,7 +388,7 @@ export default function AdminSettingsPage() {
             <section className="store-settings-card">
               <div className="store-settings-card-heading">
                 <h2>Shipping settings</h2>
-                <p>Configure your intended delivery and shipping defaults.</p>
+                <p>Configure your store's shipping defaults.</p>
               </div>
 
               <div className="store-settings-grid">
@@ -340,7 +423,8 @@ export default function AdminSettingsPage() {
                     }
                   />
                   <small>
-                    Enter 0 if you intend to offer free shipping on every order.
+                    Enter 0 if you intend to offer free shipping on every
+                    order.
                   </small>
                 </div>
 
@@ -358,6 +442,15 @@ export default function AdminSettingsPage() {
                   />
                 </div>
               </div>
+
+              <div className="store-settings-info">
+                <strong>Shipping integration</strong>
+                <p>
+                  These values are stored centrally. We still need to connect
+                  the shipping calculation in checkout and order creation
+                  before they affect customer orders.
+                </p>
+              </div>
             </section>
           )}
 
@@ -365,14 +458,15 @@ export default function AdminSettingsPage() {
             <section className="store-settings-card">
               <div className="store-settings-card-heading">
                 <h2>Tax & checkout</h2>
-                <p>Set intended tax and payment preferences for future integration.</p>
+                <p>Configure tax and payment preferences.</p>
               </div>
 
               <label className="store-settings-toggle">
                 <span>
                   <strong>Enable tax calculation</strong>
                   <small>
-                    Preference only; no tax will be calculated at checkout yet.
+                    Stores your tax preference. Checkout tax calculation still
+                    needs to be connected and verified.
                   </small>
                 </span>
                 <input
@@ -397,9 +491,8 @@ export default function AdminSettingsPage() {
                     onChange={(e) => updateField("taxRate", e.target.value)}
                   />
                   <small>
-                    Confirm the applicable rate and product-specific tax
-                    treatment with your tax adviser before using this for real
-                    orders.
+                    Confirm applicable GST rates and product-specific tax
+                    treatment before applying tax to real orders.
                   </small>
                 </div>
               </div>
@@ -408,16 +501,15 @@ export default function AdminSettingsPage() {
 
               <div className="store-settings-card-heading">
                 <h2>Payment methods</h2>
-                <p>Choose which payment methods you intend to offer.</p>
+                <p>Choose which payment methods your store should offer.</p>
               </div>
 
               <label className="store-settings-toggle">
                 <span>
                   <strong>Cash on Delivery (COD)</strong>
                   <small>
-                    Turn this on when you want to allow customers to pay when
-                    their order is delivered. This preference is currently
-                    saved in this browser only.
+                    Enable or disable COD for the store. We will enforce this
+                    setting in checkout and on the order server.
                   </small>
                 </span>
                 <input
@@ -430,12 +522,12 @@ export default function AdminSettingsPage() {
               </label>
 
               <div className="store-settings-info">
-                <strong>Payment integration pending</strong>
+                <strong>COD server enforcement</strong>
                 <p>
-                  This COD toggle saves your preference in this browser. It
-                  does not yet control checkout or enforce payment availability
-                  on the server. We will connect it to checkout and shared
-                  backend storage next.
+                  The setting is now saved in the shared database. The next
+                  integration step is to make checkout display the correct
+                  payment option and make the order API reject COD orders
+                  whenever this setting is disabled.
                 </p>
               </div>
             </section>
@@ -445,15 +537,15 @@ export default function AdminSettingsPage() {
             <section className="store-settings-card">
               <div className="store-settings-card-heading">
                 <h2>Store operations</h2>
-                <p>Preferences for future store administration.</p>
+                <p>Manage operational preferences.</p>
               </div>
 
               <label className="store-settings-toggle">
                 <span>
-                  <strong>Maintenance mode preference</strong>
+                  <strong>Maintenance mode</strong>
                   <small>
-                    Saves your preference only. It does not take the live store
-                    offline.
+                    Stores the maintenance preference. It does not yet take
+                    the live storefront offline.
                   </small>
                 </span>
                 <input
@@ -466,23 +558,28 @@ export default function AdminSettingsPage() {
               </label>
 
               <div className="store-settings-info">
-                <strong>Backend integration pending</strong>
+                <strong>Storefront integration pending</strong>
                 <p>
-                  These settings must be connected to shared backend storage
-                  and the relevant checkout/storefront logic before they affect
-                  customers.
+                  Maintenance mode must be connected to the storefront before
+                  it can restrict customer access.
                 </p>
               </div>
             </section>
           )}
 
           <div className="store-settings-bottom-actions">
-            <span>Remember to save after making changes.</span>
+            <span>
+              {saving
+                ? "Saving changes to the database..."
+                : "Changes are saved to the shared database."}
+            </span>
+
             <button
               type="submit"
               className="store-settings-btn primary"
+              disabled={saving}
             >
-              Save settings
+              {saving ? "Saving..." : "Save settings"}
             </button>
           </div>
         </form>

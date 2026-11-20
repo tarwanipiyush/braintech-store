@@ -1,62 +1,17 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import "../admin.css";
 
-const STORAGE_KEY = "braintech-admin-orders-v1";
+const API_URL = "/api/admin/orders";
 
-const INITIAL_ORDERS = [
-  {
-    id: "BT-1001",
-    customer: "Aarav Sharma",
-    email: "aarav@example.com",
-    date: "2026-10-20",
-    items: 2,
-    total: 58498,
-    payment: "Paid",
-    status: "Processing",
-  },
-  {
-    id: "BT-1002",
-    customer: "Priya Patel",
-    email: "priya@example.com",
-    date: "2026-10-20",
-    items: 1,
-    total: 72999,
-    payment: "Paid",
-    status: "Shipped",
-  },
-  {
-    id: "BT-1003",
-    customer: "Rahul Verma",
-    email: "rahul@example.com",
-    date: "2026-10-19",
-    items: 3,
-    total: 124997,
-    payment: "Pending",
-    status: "Pending",
-  },
-  {
-    id: "BT-1004",
-    customer: "Sneha Desai",
-    email: "sneha@example.com",
-    date: "2026-10-18",
-    items: 1,
-    total: 24999,
-    payment: "Paid",
-    status: "Delivered",
-  },
-  {
-    id: "BT-1005",
-    customer: "Ishaan Mehta",
-    email: "ishaan@example.com",
-    date: "2026-10-17",
-    items: 2,
-    total: 41998,
-    payment: "Failed",
-    status: "Cancelled",
-  },
+const ORDER_STATUSES = [
+  "Pending",
+  "Processing",
+  "Shipped",
+  "Delivered",
+  "Cancelled",
 ];
 
 const formatPrice = (amount) =>
@@ -67,39 +22,159 @@ const formatPrice = (amount) =>
   }).format(Number(amount) || 0);
 
 function statusClass(status) {
-  return String(status).toLowerCase().replace(/\s+/g, "-");
+  return String(status || "")
+    .toLowerCase()
+    .replace(/\s+/g, "-");
+}
+
+function normalizeOrder(order) {
+  const rawStatus = String(order.order_status || order.status || "pending")
+    .toLowerCase();
+
+  const statusMap = {
+    placed: "Pending",
+    pending: "Pending",
+    processing: "Processing",
+    shipped: "Shipped",
+    delivered: "Delivered",
+    cancelled: "Cancelled",
+  };
+
+  const rawPayment = String(
+    order.payment_status || order.payment || "pending"
+  ).toLowerCase();
+
+  const paymentMap = {
+    paid: "Paid",
+    completed: "Paid",
+    success: "Paid",
+    pending: "Pending",
+    failed: "Failed",
+    cancelled: "Failed",
+    refunded: "Refunded",
+  };
+
+  return {
+    ...order,
+    id: order.order_number || order.id,
+    databaseId: order.id,
+    customer: order.customer_name || order.customer || "Customer",
+    email: order.customer_email || order.email || "",
+    phone: order.customer_phone || "",
+    date: order.created_at || order.date || "",
+    items: Number(order.item_count ?? order.items_count ?? 0),
+    total: Number(order.total ?? order.total_amount ?? 0),
+    payment: paymentMap[rawPayment] || rawPayment,
+    status: statusMap[rawStatus] || rawStatus,
+  };
+}
+
+function getToken() {
+  if (typeof window === "undefined") return "";
+
+  return localStorage.getItem("braintech-admin-token") || "";
+}
+
+async function apiRequest(url, options = {}) {
+  const token = getToken();
+
+  if (!token) {
+    throw new Error(
+      "Admin token not found. Please log in to the admin panel again."
+    );
+  }
+
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      ...options.headers,
+    },
+    cache: "no-store",
+  });
+
+  let data;
+
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error("The server returned an invalid response.");
+  }
+
+  if (!response.ok || data.success === false) {
+    throw new Error(
+      data.message ||
+        data.error ||
+        `Request failed with status ${response.status}`
+    );
+  }
+
+  return data;
+}
+
+function formatDate(value) {
+  if (!value) return "—";
+
+  const date = new Date(value.replace(" ", "T"));
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState([]);
+  const [stats, setStats] = useState(null);
+
   const [loaded, setLoaded] = useState(false);
+  const [loading, setLoading] = useState(false);
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [paymentFilter, setPaymentFilter] = useState("All");
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [notice, setNotice] = useState("");
 
-  useEffect(() => {
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+
+  const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
+
+  const [savingStatus, setSavingStatus] = useState(false);
+
+  const loadOrders = useCallback(async () => {
+    setLoading(true);
+    setError("");
+
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      setOrders(saved ? JSON.parse(saved) : INITIAL_ORDERS);
-    } catch (error) {
-      console.error("Could not load orders:", error);
-      setOrders(INITIAL_ORDERS);
+      const data = await apiRequest(API_URL);
+
+      const rows = Array.isArray(data.orders)
+        ? data.orders
+        : Array.isArray(data.data)
+          ? data.data
+          : [];
+
+      setOrders(rows.map(normalizeOrder));
+      setStats(data.stats || null);
+    } catch (err) {
+      setError(err.message || "Unable to load orders.");
+    } finally {
+      setLoading(false);
+      setLoaded(true);
     }
-    setLoaded(true);
   }, []);
 
-  function persistOrders(nextOrders, message) {
-    setOrders(nextOrders);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(nextOrders));
-      setNotice(message);
-    } catch (error) {
-      console.error("Could not save orders:", error);
-      setNotice("Could not save changes. Browser storage may be full.");
-    }
-  }
+  useEffect(() => {
+    loadOrders();
+  }, [loadOrders]);
 
   const filteredOrders = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -109,44 +184,141 @@ export default function OrdersPage() {
         !query ||
         String(order.id).toLowerCase().includes(query) ||
         String(order.customer).toLowerCase().includes(query) ||
-        String(order.email).toLowerCase().includes(query);
+        String(order.email).toLowerCase().includes(query) ||
+        String(order.phone).toLowerCase().includes(query);
 
-      return (
-        matchesSearch &&
-        (statusFilter === "All" || order.status === statusFilter) &&
-        (paymentFilter === "All" || order.payment === paymentFilter)
-      );
+      const matchesStatus =
+        statusFilter === "All" || order.status === statusFilter;
+
+      const matchesPayment =
+        paymentFilter === "All" || order.payment === paymentFilter;
+
+      return matchesSearch && matchesStatus && matchesPayment;
     });
   }, [orders, search, statusFilter, paymentFilter]);
 
-  const revenue = orders
-    .filter((order) => order.payment === "Paid" && order.status !== "Cancelled")
-    .reduce((sum, order) => sum + Number(order.total || 0), 0);
+  const totalOrders = Number(
+    stats?.total_orders ?? orders.length
+  );
 
-  const pendingCount = orders.filter(
-    (order) => order.status === "Pending" || order.status === "Processing"
-  ).length;
+  const revenue = Number(
+    stats?.total_revenue ??
+      orders
+        .filter(
+          (order) =>
+            order.payment === "Paid" &&
+            order.status !== "Cancelled"
+        )
+        .reduce((sum, order) => sum + order.total, 0)
+  );
 
-  const paidCount = orders.filter((order) => order.payment === "Paid").length;
+  const pendingCount = Number(
+    stats?.pending_orders ??
+      orders.filter(
+        (order) =>
+          order.status === "Pending" ||
+          order.status === "Processing"
+      ).length
+  );
 
-  function updateStatus(orderId, status) {
-    const next = orders.map((order) =>
-      order.id === orderId ? { ...order, status } : order
-    );
-    persistOrders(next, `Order ${orderId} status updated to ${status}.`);
+  const deliveredCount = Number(
+    stats?.delivered_orders ??
+      orders.filter((order) => order.status === "Delivered").length
+  );
 
-    if (selectedOrder?.id === orderId) {
-      setSelectedOrder({ ...selectedOrder, status });
+  async function openOrder(order) {
+    setSelectedOrder({
+      ...order,
+      itemsList: [],
+      payments: [],
+      history: [],
+    });
+
+    setDetailLoading(true);
+    setError("");
+
+    try {
+      const databaseId = order.databaseId;
+
+      if (!databaseId) {
+        throw new Error("Database order ID is missing.");
+      }
+
+      const data = await apiRequest(
+        `${API_URL}?id=${encodeURIComponent(databaseId)}`
+      );
+
+      const detail = data.order || {};
+
+      setSelectedOrder({
+        ...normalizeOrder(detail),
+        databaseId: detail.id || databaseId,
+        itemsList: Array.isArray(data.items) ? data.items : [],
+        payments: Array.isArray(data.payments) ? data.payments : [],
+        history: Array.isArray(data.history) ? data.history : [],
+      });
+    } catch (err) {
+      setNotice("");
+      setError(err.message || "Could not load order details.");
+    } finally {
+      setDetailLoading(false);
     }
   }
 
-  function updatePayment(orderId, payment) {
-    const next = orders.map((order) =>
-      order.id === orderId ? { ...order, payment } : order
-    );
-    persistOrders(next, `Order ${orderId} payment updated.`);
-    if (selectedOrder?.id === orderId) {
-      setSelectedOrder({ ...selectedOrder, payment });
+  async function updateStatus(order, newStatus) {
+    if (!order?.databaseId || savingStatus) return;
+
+    const previousStatus = order.status;
+
+    setSavingStatus(true);
+    setNotice("");
+    setError("");
+
+    try {
+      const statusMap = {
+        Pending: "pending",
+        Processing: "processing",
+        Shipped: "shipped",
+        Delivered: "delivered",
+        Cancelled: "cancelled",
+      };
+
+      const data = await apiRequest(API_URL, {
+        method: "PUT",
+        body: JSON.stringify({
+          id: order.databaseId,
+          order_status: statusMap[newStatus] || newStatus.toLowerCase(),
+          note: `Order status updated to ${newStatus} from BrainTech Admin`,
+        }),
+      });
+
+      if (data.success === false) {
+        throw new Error(data.message || "Status update failed.");
+      }
+
+      setOrders((current) =>
+        current.map((item) =>
+          item.databaseId === order.databaseId
+            ? { ...item, status: newStatus }
+            : item
+        )
+      );
+
+      setSelectedOrder((current) =>
+        current?.databaseId === order.databaseId
+          ? { ...current, status: newStatus }
+          : current
+      );
+
+      setNotice(
+        `Order ${order.id} updated: ${previousStatus} → ${newStatus}`
+      );
+
+      await loadOrders();
+    } catch (err) {
+      setError(err.message || "Could not update order status.");
+    } finally {
+      setSavingStatus(false);
     }
   }
 
@@ -155,6 +327,7 @@ export default function OrdersPage() {
       "Order ID",
       "Customer",
       "Email",
+      "Phone",
       "Date",
       "Items",
       "Total INR",
@@ -162,10 +335,11 @@ export default function OrdersPage() {
       "Status",
     ];
 
-    const rows = orders.map((order) => [
+    const rows = filteredOrders.map((order) => [
       order.id,
       order.customer,
       order.email,
+      order.phone,
       order.date,
       order.items,
       order.total,
@@ -183,16 +357,26 @@ export default function OrdersPage() {
     const blob = new Blob(["\uFEFF" + csv], {
       type: "text/csv;charset=utf-8;",
     });
+
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
+
     link.href = url;
     link.download = "braintech-orders.csv";
+
+    document.body.appendChild(link);
     link.click();
+    link.remove();
+
     URL.revokeObjectURL(url);
   }
 
   if (!loaded) {
-    return <main className="orders-page">Loading orders...</main>;
+    return (
+      <main className="orders-page">
+        <p>Loading orders from database...</p>
+      </main>
+    );
   }
 
   return (
@@ -206,13 +390,24 @@ export default function OrdersPage() {
           </p>
         </div>
 
-        <button
-          type="button"
-          className="orders-primary-button"
-          onClick={exportOrders}
-        >
-          Export orders
-        </button>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <button
+            type="button"
+            className="orders-view-button"
+            onClick={loadOrders}
+            disabled={loading}
+          >
+            {loading ? "Refreshing..." : "Refresh"}
+          </button>
+
+          <button
+            type="button"
+            className="orders-primary-button"
+            onClick={exportOrders}
+          >
+            Export orders
+          </button>
+        </div>
       </header>
 
       {notice && (
@@ -221,26 +416,35 @@ export default function OrdersPage() {
         </div>
       )}
 
+      {error && (
+        <div className="orders-notice" role="alert">
+          {error}
+        </div>
+      )}
+
       <section className="orders-stats">
         <article className="orders-stat-card">
           <span>Total orders</span>
-          <strong>{orders.length}</strong>
-          <small>Orders in this preview</small>
+          <strong>{totalOrders}</strong>
+          <small>Orders from database</small>
         </article>
+
         <article className="orders-stat-card">
-          <span>Paid order value</span>
+          <span>Total revenue</span>
           <strong>{formatPrice(revenue)}</strong>
-          <small>Paid, non-cancelled orders</small>
+          <small>Revenue reported by backend</small>
         </article>
+
         <article className="orders-stat-card">
           <span>Needs attention</span>
           <strong>{pendingCount}</strong>
-          <small>Pending or processing</small>
+          <small>Pending orders</small>
         </article>
+
         <article className="orders-stat-card">
-          <span>Paid orders</span>
-          <strong>{paidCount}</strong>
-          <small>Payment marked as paid</small>
+          <span>Delivered orders</span>
+          <strong>{deliveredCount}</strong>
+          <small>Successfully delivered</small>
         </article>
       </section>
 
@@ -266,11 +470,11 @@ export default function OrdersPage() {
             aria-label="Filter by order status"
           >
             <option value="All">All statuses</option>
-            <option value="Pending">Pending</option>
-            <option value="Processing">Processing</option>
-            <option value="Shipped">Shipped</option>
-            <option value="Delivered">Delivered</option>
-            <option value="Cancelled">Cancelled</option>
+            {ORDER_STATUSES.map((status) => (
+              <option key={status} value={status}>
+                {status}
+              </option>
+            ))}
           </select>
 
           <select
@@ -283,6 +487,7 @@ export default function OrdersPage() {
             <option value="Paid">Paid</option>
             <option value="Pending">Pending</option>
             <option value="Failed">Failed</option>
+            <option value="Refunded">Refunded</option>
           </select>
         </div>
 
@@ -300,42 +505,54 @@ export default function OrdersPage() {
                 <th>Actions</th>
               </tr>
             </thead>
+
             <tbody>
               {filteredOrders.map((order) => (
-                <tr key={order.id}>
+                <tr key={order.databaseId || order.id}>
                   <td>
                     <strong>{order.id}</strong>
                   </td>
+
                   <td>
                     <div className="orders-customer">
                       <strong>{order.customer}</strong>
                       <small>{order.email}</small>
                     </div>
                   </td>
-                  <td>{order.date}</td>
+
+                  <td>{formatDate(order.date)}</td>
+
                   <td>{order.items}</td>
+
                   <td>
                     <strong>{formatPrice(order.total)}</strong>
                   </td>
+
                   <td>
                     <span
-                      className={`orders-badge payment-${statusClass(order.payment)}`}
+                      className={`orders-badge payment-${statusClass(
+                        order.payment
+                      )}`}
                     >
                       {order.payment}
                     </span>
                   </td>
+
                   <td>
                     <span
-                      className={`orders-badge order-${statusClass(order.status)}`}
+                      className={`orders-badge order-${statusClass(
+                        order.status
+                      )}`}
                     >
                       {order.status}
                     </span>
                   </td>
+
                   <td>
                     <button
                       type="button"
                       className="orders-view-button"
-                      onClick={() => setSelectedOrder(order)}
+                      onClick={() => openOrder(order)}
                     >
                       View
                     </button>
@@ -346,7 +563,9 @@ export default function OrdersPage() {
               {filteredOrders.length === 0 && (
                 <tr>
                   <td colSpan={8} className="orders-empty">
-                    No orders match your filters.
+                    {loading
+                      ? "Loading orders..."
+                      : "No orders match your filters."}
                   </td>
                 </tr>
               )}
@@ -379,6 +598,7 @@ export default function OrdersPage() {
                 <p className="orders-eyebrow">ORDER DETAILS</p>
                 <h2 id="orders-modal-title">{selectedOrder.id}</h2>
               </div>
+
               <button
                 type="button"
                 className="orders-close-button"
@@ -389,76 +609,172 @@ export default function OrdersPage() {
               </button>
             </header>
 
-            <div className="orders-detail-grid">
-              <div>
-                <span>Customer</span>
-                <strong>{selectedOrder.customer}</strong>
-              </div>
-              <div>
-                <span>Email</span>
-                <strong>{selectedOrder.email}</strong>
-              </div>
-              <div>
-                <span>Order date</span>
-                <strong>{selectedOrder.date}</strong>
-              </div>
-              <div>
-                <span>Items</span>
-                <strong>{selectedOrder.items}</strong>
-              </div>
-              <div>
-                <span>Order total</span>
-                <strong>{formatPrice(selectedOrder.total)}</strong>
-              </div>
-            </div>
+            {detailLoading ? (
+              <p>Loading order details...</p>
+            ) : (
+              <>
+                <div className="orders-detail-grid">
+                  <div>
+                    <span>Customer</span>
+                    <strong>{selectedOrder.customer}</strong>
+                  </div>
 
-            <label className="orders-field-label">
-              Order status
-              <select
-                className="orders-select orders-modal-select"
-                value={selectedOrder.status}
-                onChange={(event) =>
-                  updateStatus(selectedOrder.id, event.target.value)
-                }
-              >
-                <option>Pending</option>
-                <option>Processing</option>
-                <option>Shipped</option>
-                <option>Delivered</option>
-                <option>Cancelled</option>
-              </select>
-            </label>
+                  <div>
+                    <span>Email</span>
+                    <strong>{selectedOrder.email || "—"}</strong>
+                  </div>
 
-            <label className="orders-field-label">
-              Payment status
-              <select
-                className="orders-select orders-modal-select"
-                value={selectedOrder.payment}
-                onChange={(event) =>
-                  updatePayment(selectedOrder.id, event.target.value)
-                }
-              >
-                <option>Pending</option>
-                <option>Paid</option>
-                <option>Failed</option>
-              </select>
-            </label>
+                  <div>
+                    <span>Phone</span>
+                    <strong>{selectedOrder.phone || "—"}</strong>
+                  </div>
 
-            <button
-              type="button"
-              className="orders-primary-button orders-done-button"
-              onClick={() => setSelectedOrder(null)}
-            >
-              Done
-            </button>
+                  <div>
+                    <span>Order date</span>
+                    <strong>{formatDate(selectedOrder.date)}</strong>
+                  </div>
+
+                  <div>
+                    <span>Items</span>
+                    <strong>{selectedOrder.items}</strong>
+                  </div>
+
+                  <div>
+                    <span>Order total</span>
+                    <strong>{formatPrice(selectedOrder.total)}</strong>
+                  </div>
+
+                  <div>
+                    <span>Payment status</span>
+                    <strong>{selectedOrder.payment}</strong>
+                  </div>
+                </div>
+
+                <label className="orders-field-label">
+                  Order status
+                  <select
+                    className="orders-select orders-modal-select"
+                    value={selectedOrder.status}
+                    disabled={savingStatus}
+                    onChange={(event) =>
+                      updateStatus(selectedOrder, event.target.value)
+                    }
+                  >
+                    {ORDER_STATUSES.map((status) => (
+                      <option key={status} value={status}>
+                        {status}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                {selectedOrder.shipping_address && (
+                  <div style={{ marginTop: 16 }}>
+                    <strong>Shipping address</strong>
+                    <p>{selectedOrder.shipping_address}</p>
+                  </div>
+                )}
+
+                {selectedOrder.itemsList?.length > 0 && (
+                  <div style={{ marginTop: 20 }}>
+                    <h3>Order items</h3>
+
+                    <div className="orders-table-wrap">
+                      <table className="orders-table">
+                        <thead>
+                          <tr>
+                            <th>Product</th>
+                            <th>Qty</th>
+                            <th>Price</th>
+                            <th>Total</th>
+                          </tr>
+                        </thead>
+
+                        <tbody>
+                          {selectedOrder.itemsList.map((item, index) => (
+                            <tr key={item.id || index}>
+                              <td>
+                                <strong>
+                                  {item.product_name || "Product"}
+                                </strong>
+                              </td>
+                              <td>{item.quantity}</td>
+                              <td>{formatPrice(item.unit_price)}</td>
+                              <td>{formatPrice(item.line_total)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {selectedOrder.payments?.length > 0 && (
+                  <div style={{ marginTop: 20 }}>
+                    <h3>Payment records</h3>
+
+                    {selectedOrder.payments.map((payment) => (
+                      <div
+                        key={payment.id}
+                        style={{
+                          padding: "10px 0",
+                          borderBottom: "1px solid #333",
+                        }}
+                      >
+                        <strong>
+                          {formatPrice(payment.amount)}
+                        </strong>
+                        {" — "}
+                        {payment.payment_method || payment.payment_provider}
+                        {" — "}
+                        {payment.status}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {selectedOrder.history?.length > 0 && (
+                  <div style={{ marginTop: 20 }}>
+                    <h3>Order history</h3>
+
+                    {selectedOrder.history.map((entry) => (
+                      <div
+                        key={entry.id}
+                        style={{
+                          padding: "10px 0",
+                          borderBottom: "1px solid #333",
+                        }}
+                      >
+                        <strong>
+                          {entry.previous_status || "Created"}
+                          {" → "}
+                          {entry.new_status}
+                        </strong>
+                        <small style={{ display: "block" }}>
+                          {formatDate(entry.created_at)}
+                        </small>
+                        {entry.note && <p>{entry.note}</p>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  className="orders-primary-button orders-done-button"
+                  onClick={() => setSelectedOrder(null)}
+                >
+                  Done
+                </button>
+              </>
+            )}
           </section>
         </div>
       )}
 
       <p className="orders-storage-note">
-        Frontend preview with sample orders. Changes are saved in this
-        browser only; real customer orders and payment verification will
-        be connected to the backend later.
+        Orders are loaded from your Hostinger database. Order status
+        changes are saved through the backend.
       </p>
     </main>
   );

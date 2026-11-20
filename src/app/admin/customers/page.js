@@ -4,66 +4,6 @@
 import { useEffect, useMemo, useState } from "react";
 import "../admin.css";
 
-const STORAGE_KEY = "braintech-admin-customers-v1";
-
-const INITIAL_CUSTOMERS = [
-  {
-    id: "CUS-1001",
-    name: "Aarav Sharma",
-    email: "aarav@example.com",
-    phone: "+91 98765 43210",
-    city: "Mumbai",
-    joined: "2026-10-12",
-    orders: 4,
-    spent: 98500,
-    status: "Active",
-  },
-  {
-    id: "CUS-1002",
-    name: "Priya Patel",
-    email: "priya@example.com",
-    phone: "+91 98765 12345",
-    city: "Pune",
-    joined: "2026-10-14",
-    orders: 2,
-    spent: 42999,
-    status: "Active",
-  },
-  {
-    id: "CUS-1003",
-    name: "Rahul Verma",
-    email: "rahul@example.com",
-    phone: "+91 99887 77665",
-    city: "Bengaluru",
-    joined: "2026-10-15",
-    orders: 1,
-    spent: 72999,
-    status: "Active",
-  },
-  {
-    id: "CUS-1004",
-    name: "Sneha Desai",
-    email: "sneha@example.com",
-    phone: "+91 98765 67890",
-    city: "Nashik",
-    joined: "2026-10-16",
-    orders: 0,
-    spent: 0,
-    status: "Active",
-  },
-  {
-    id: "CUS-1005",
-    name: "Ishaan Mehta",
-    email: "ishaan@example.com",
-    phone: "+91 97654 32109",
-    city: "Delhi",
-    joined: "2026-10-17",
-    orders: 3,
-    spent: 56750,
-    status: "Inactive",
-  },
-];
-
 const formatPrice = (amount) =>
   new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -71,13 +11,52 @@ const formatPrice = (amount) =>
     maximumFractionDigits: 0,
   }).format(Number(amount) || 0);
 
+function formatDate(value) {
+  if (!value) return "—";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return value;
+
+  return date.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
 function statusClass(status) {
   return String(status).toLowerCase();
+}
+
+function normalizeCustomer(item) {
+  const addresses = Array.isArray(item.addresses) ? item.addresses : [];
+  const defaultAddress =
+    addresses.find((address) => Number(address.is_default) === 1) ||
+    addresses[0] ||
+    null;
+
+  return {
+    id: String(item.id),
+    name: item.full_name || "",
+    email: item.email || "",
+    phone: item.phone || "",
+    city: defaultAddress?.city || "",
+    joined: item.created_at || "",
+    orders: Number(item.total_orders || 0),
+    spent: Number(item.total_spent || 0),
+    status: Number(item.is_active) === 1 ? "Active" : "Inactive",
+    addresses,
+    orderHistory: Array.isArray(item.order_history)
+      ? item.order_history
+      : [],
+  };
 }
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState([]);
   const [loaded, setLoaded] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -88,31 +67,64 @@ export default function CustomersPage() {
     name: "",
     email: "",
     phone: "",
-    city: "",
   });
 
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      setCustomers(saved ? JSON.parse(saved) : INITIAL_CUSTOMERS);
-    } catch (error) {
-      console.error("Could not load customers:", error);
-      setCustomers(INITIAL_CUSTOMERS);
+  function getToken() {
+    return localStorage.getItem("braintech-admin-token");
+  }
+
+  async function loadCustomers() {
+    const token = getToken();
+
+    if (!token) {
+      setNotice("Admin session not found. Please log in again.");
+      setLoaded(true);
+      return;
     }
-    setLoaded(true);
-  }, []);
 
-  function persistCustomers(nextCustomers, message) {
-    setCustomers(nextCustomers);
+    setLoading(true);
 
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(nextCustomers));
-      setNotice(message);
+      const response = await fetch("/api/admin/customers", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+        cache: "no-store",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Could not load customers.");
+      }
+
+      const normalized = (data.customers || []).map(normalizeCustomer);
+
+      setCustomers(normalized);
+
+      setSelectedCustomer((current) => {
+        if (!current) return null;
+
+        return (
+          normalized.find((customer) => customer.id === current.id) || null
+        );
+      });
+
+      setNotice("");
     } catch (error) {
-      console.error("Could not save customers:", error);
-      setNotice("Could not save changes. Browser storage may be full.");
+      console.error("Customers loading error:", error);
+      setNotice(error.message || "Unable to load customers.");
+    } finally {
+      setLoading(false);
+      setLoaded(true);
     }
   }
+
+  useEffect(() => {
+    loadCustomers();
+  }, []);
 
   const filteredCustomers = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -120,11 +132,11 @@ export default function CustomersPage() {
     return customers.filter((customer) => {
       const matchesSearch =
         !query ||
-        String(customer.name || "").toLowerCase().includes(query) ||
-        String(customer.email || "").toLowerCase().includes(query) ||
-        String(customer.phone || "").toLowerCase().includes(query) ||
-        String(customer.city || "").toLowerCase().includes(query) ||
-        String(customer.id || "").toLowerCase().includes(query);
+        customer.name.toLowerCase().includes(query) ||
+        customer.email.toLowerCase().includes(query) ||
+        customer.phone.toLowerCase().includes(query) ||
+        customer.city.toLowerCase().includes(query) ||
+        customer.id.toLowerCase().includes(query);
 
       return (
         matchesSearch &&
@@ -134,12 +146,12 @@ export default function CustomersPage() {
   }, [customers, search, statusFilter]);
 
   const totalSpent = customers.reduce(
-    (sum, customer) => sum + Number(customer.spent || 0),
+    (sum, customer) => sum + customer.spent,
     0
   );
 
   const repeatCustomers = customers.filter(
-    (customer) => Number(customer.orders || 0) > 1
+    (customer) => customer.orders > 1
   ).length;
 
   const activeCustomers = customers.filter(
@@ -148,68 +160,115 @@ export default function CustomersPage() {
 
   function handleFormChange(event) {
     const { name, value } = event.target;
-    setForm((current) => ({ ...current, [name]: value }));
+
+    setForm((current) => ({
+      ...current,
+      [name]: value,
+    }));
   }
 
-  function addCustomer(event) {
+  async function addCustomer(event) {
     event.preventDefault();
 
     const name = form.name.trim();
     const email = form.email.trim();
+    const phone = form.phone.trim();
 
     if (!name || !email) {
       setNotice("Customer name and email are required.");
       return;
     }
 
-    if (
-      customers.some(
-        (customer) =>
-          String(customer.email).toLowerCase() === email.toLowerCase()
-      )
-    ) {
-      setNotice("A customer with this email already exists.");
+    const token = getToken();
+
+    if (!token) {
+      setNotice("Admin session not found. Please log in again.");
       return;
     }
 
-    const customer = {
-      id: `CUS-${Date.now().toString().slice(-8)}`,
-      name,
-      email,
-      phone: form.phone.trim(),
-      city: form.city.trim(),
-      joined: new Date().toISOString().slice(0, 10),
-      orders: 0,
-      spent: 0,
-      status: "Active",
-    };
+    setLoading(true);
+    setNotice("");
 
-    persistCustomers(
-      [customer, ...customers],
-      "Customer added successfully."
-    );
+    try {
+      const response = await fetch("/api/admin/customers", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          full_name: name,
+          email,
+          phone,
+        }),
+      });
 
-    setForm({ name: "", email: "", phone: "", city: "" });
-    setShowAddForm(false);
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Could not create customer.");
+      }
+
+      setForm({
+        name: "",
+        email: "",
+        phone: "",
+      });
+
+      setShowAddForm(false);
+
+      await loadCustomers();
+      setNotice("Customer added successfully.");
+    } catch (error) {
+      console.error("Customer creation error:", error);
+      setNotice(error.message || "Could not add customer.");
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function toggleStatus(customer) {
+  async function toggleStatus(customer) {
+    const token = getToken();
+
+    if (!token) {
+      setNotice("Admin session not found. Please log in again.");
+      return;
+    }
+
     const updatedStatus =
       customer.status === "Active" ? "Inactive" : "Active";
 
-    const nextCustomers = customers.map((item) =>
-      item.id === customer.id
-        ? { ...item, status: updatedStatus }
-        : item
-    );
+    setLoading(true);
+    setNotice("");
 
-    persistCustomers(
-      nextCustomers,
-      `${customer.name} is now ${updatedStatus.toLowerCase()}.`
-    );
+    try {
+      const response = await fetch("/api/admin/customers", {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: Number(customer.id),
+          is_active: updatedStatus === "Active" ? 1 : 0,
+        }),
+      });
 
-    if (selectedCustomer?.id === customer.id) {
-      setSelectedCustomer({ ...selectedCustomer, status: updatedStatus });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Could not update customer.");
+      }
+
+      await loadCustomers();
+      setNotice(
+        `${customer.name} is now ${updatedStatus.toLowerCase()}.`
+      );
+    } catch (error) {
+      console.error("Customer status update error:", error);
+      setNotice(error.message || "Could not update customer status.");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -251,9 +310,11 @@ export default function CustomersPage() {
 
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
+
     link.href = url;
     link.download = "braintech-customers.csv";
     link.click();
+
     URL.revokeObjectURL(url);
   }
 
@@ -277,6 +338,7 @@ export default function CustomersPage() {
             type="button"
             className="customers-secondary-button"
             onClick={exportCustomers}
+            disabled={loading}
           >
             Export CSV
           </button>
@@ -304,7 +366,10 @@ export default function CustomersPage() {
         <form className="customers-add-form" onSubmit={addCustomer}>
           <div className="customers-form-heading">
             <h2>Add customer</h2>
-            <p>Enter the customer's contact details.</p>
+            <p>
+              Create a customer profile. Saved delivery addresses can be
+              managed separately.
+            </p>
           </div>
 
           <div className="customers-form-grid">
@@ -340,20 +405,14 @@ export default function CustomersPage() {
                 placeholder="+91..."
               />
             </label>
-
-            <label>
-              City
-              <input
-                name="city"
-                value={form.city}
-                onChange={handleFormChange}
-                placeholder="City"
-              />
-            </label>
           </div>
 
-          <button className="customers-primary-button" type="submit">
-            Save customer
+          <button
+            className="customers-primary-button"
+            type="submit"
+            disabled={loading}
+          >
+            {loading ? "Saving..." : "Save customer"}
           </button>
         </form>
       )}
@@ -362,7 +421,7 @@ export default function CustomersPage() {
         <article className="customers-stat-card">
           <span>Total customers</span>
           <strong>{customers.length}</strong>
-          <small>Profiles in this preview</small>
+          <small>Database customer profiles</small>
         </article>
 
         <article className="customers-stat-card">
@@ -380,7 +439,7 @@ export default function CustomersPage() {
         <article className="customers-stat-card">
           <span>Total spend</span>
           <strong>{formatPrice(totalSpent)}</strong>
-          <small>Across sample customer records</small>
+          <small>Across recorded customer orders</small>
         </article>
       </section>
 
@@ -411,6 +470,10 @@ export default function CustomersPage() {
           </select>
         </div>
 
+        {loading && (
+          <p className="customers-notice">Updating customer records...</p>
+        )}
+
         <div className="customers-table-wrap">
           <table className="customers-table">
             <thead>
@@ -432,7 +495,7 @@ export default function CustomersPage() {
                   <td>
                     <div className="customers-person">
                       <div className="customers-avatar">
-                        {String(customer.name || "?")
+                        {customer.name
                           .trim()
                           .split(/\s+/)
                           .slice(0, 2)
@@ -450,8 +513,8 @@ export default function CustomersPage() {
 
                   <td>{customer.phone || "—"}</td>
                   <td>{customer.city || "—"}</td>
-                  <td>{customer.joined || "—"}</td>
-                  <td>{Number(customer.orders || 0)}</td>
+                  <td>{formatDate(customer.joined)}</td>
+                  <td>{customer.orders}</td>
                   <td>
                     <strong>{formatPrice(customer.spent)}</strong>
                   </td>
@@ -480,6 +543,7 @@ export default function CustomersPage() {
                         type="button"
                         className="customers-toggle-button"
                         onClick={() => toggleStatus(customer)}
+                        disabled={loading}
                       >
                         {customer.status === "Active"
                           ? "Deactivate"
@@ -493,7 +557,9 @@ export default function CustomersPage() {
               {filteredCustomers.length === 0 && (
                 <tr>
                   <td colSpan={8} className="customers-empty">
-                    No customers match your search or filter.
+                    {loading
+                      ? "Loading customer records..."
+                      : "No customers match your search or filter."}
                   </td>
                 </tr>
               )}
@@ -553,16 +619,16 @@ export default function CustomersPage() {
                 <strong>{selectedCustomer.phone || "Not provided"}</strong>
               </div>
               <div>
-                <span>City</span>
+                <span>Default city</span>
                 <strong>{selectedCustomer.city || "Not provided"}</strong>
               </div>
               <div>
                 <span>Joined</span>
-                <strong>{selectedCustomer.joined || "—"}</strong>
+                <strong>{formatDate(selectedCustomer.joined)}</strong>
               </div>
               <div>
                 <span>Order count</span>
-                <strong>{selectedCustomer.orders || 0}</strong>
+                <strong>{selectedCustomer.orders}</strong>
               </div>
               <div>
                 <span>Total spent</span>
@@ -572,6 +638,69 @@ export default function CustomersPage() {
                 <span>Account status</span>
                 <strong>{selectedCustomer.status}</strong>
               </div>
+            </div>
+
+            <div className="customers-profile-section">
+              <h3>Saved addresses</h3>
+
+              {selectedCustomer.addresses.length === 0 ? (
+                <p>No saved addresses found.</p>
+              ) : (
+                selectedCustomer.addresses.map((address) => (
+                  <article key={address.id} className="customers-address-card">
+                    <strong>
+                      {address.recipient_name}
+                      {Number(address.is_default) === 1 && " · Default"}
+                    </strong>
+                    <p>
+                      {address.address_line1}
+                      {address.address_line2
+                        ? `, ${address.address_line2}`
+                        : ""}
+                      {`, ${address.city}, ${address.state} - ${address.postal_code}`}
+                      {`, ${address.country}`}
+                    </p>
+                    <small>
+                      {address.phone} · {address.address_type}
+                    </small>
+                  </article>
+                ))
+              )}
+            </div>
+
+            <div className="customers-profile-section">
+              <h3>Order history</h3>
+
+              {selectedCustomer.orderHistory.length === 0 ? (
+                <p>No orders found for this customer.</p>
+              ) : (
+                <div className="customers-table-wrap">
+                  <table className="customers-table">
+                    <thead>
+                      <tr>
+                        <th>Order</th>
+                        <th>Date</th>
+                        <th>Items</th>
+                        <th>Total</th>
+                        <th>Payment</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedCustomer.orderHistory.map((order) => (
+                        <tr key={order.id}>
+                          <td>{order.order_number || order.id}</td>
+                          <td>{formatDate(order.created_at)}</td>
+                          <td>{Number(order.item_count || 0)}</td>
+                          <td>{formatPrice(order.total)}</td>
+                          <td>{order.payment_status || "—"}</td>
+                          <td>{order.order_status || "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
 
             <button
@@ -584,12 +713,6 @@ export default function CustomersPage() {
           </section>
         </div>
       )}
-
-      <p className="customers-storage-note">
-        Frontend preview with sample customers. Customer records are stored
-        in this browser only. Real customer data will come from the database
-        after backend integration.
-      </p>
     </main>
   );
 }
