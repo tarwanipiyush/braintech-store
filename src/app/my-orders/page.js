@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 
 const formatPrice = (amount) =>
   new Intl.NumberFormat("en-IN", {
@@ -25,9 +26,22 @@ const formatDate = (date) => {
   });
 };
 
+const canCancelOrder = (order) => {
+  const status = String(order.orderStatus || "")
+    .trim()
+    .toLowerCase();
+
+  return (
+    ["placed", "pending", "processing", "order placed"].includes(status) &&
+    Boolean(order.orderId)
+  );
+};
+
 export default function MyOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [loaded, setLoaded] = useState(false);
+  const [cancellingOrder, setCancellingOrder] = useState(null);
+  const [cancelErrors, setCancelErrors] = useState({});
 
   useEffect(() => {
     try {
@@ -39,7 +53,6 @@ export default function MyOrdersPage() {
 
       const validOrders = Array.isArray(history) ? history : [];
 
-      // Include the latest order if it isn't already in history.
       const combined = latestOrder
         ? [
             latestOrder,
@@ -56,6 +69,105 @@ export default function MyOrdersPage() {
       setLoaded(true);
     }
   }, []);
+
+  async function handleCancelOrder(order) {
+    const confirmed = window.confirm(
+      `Are you sure you want to cancel order ${order.orderId}?`
+    );
+
+    if (!confirmed) return;
+
+    setCancellingOrder(order.orderId);
+    setCancelErrors((previous) => ({
+      ...previous,
+      [order.orderId]: "",
+    }));
+
+    try {
+      const supabase = createClient();
+
+      const {
+        data: { session },
+        error: authError,
+      } = await supabase.auth.getSession();
+
+      if (authError || !session?.access_token) {
+        throw new Error(
+          "Please sign in again before cancelling your order."
+        );
+      }
+
+      const response = await fetch("/api/store/orders/cancel", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          orderNumber: order.orderId,
+        }),
+        cache: "no-store",
+      });
+
+      const result = await response.json();
+
+      const alreadyCancelled =
+  String(result.message || "")
+    .toLowerCase()
+    .includes("already been cancelled") ||
+  String(result.orderStatus || "")
+    .toLowerCase() === "cancelled";
+
+if ((!response.ok || !result.success) && !alreadyCancelled) {
+  throw new Error(
+    result.message || "Unable to cancel this order."
+  );
+}
+
+      const updatedOrders = orders.map((item) =>
+        item.orderId === order.orderId
+          ? {
+              ...item,
+              orderStatus: "Cancelled",
+              cancelledAt: new Date().toISOString(),
+            }
+          : item
+      );
+
+      setOrders(updatedOrders);
+
+      localStorage.setItem(
+        "braintech-orders",
+        JSON.stringify(updatedOrders)
+      );
+
+      const latest = localStorage.getItem("braintech-latest-order");
+
+      if (latest) {
+        const latestOrder = JSON.parse(latest);
+
+        if (latestOrder.orderId === order.orderId) {
+          localStorage.setItem(
+            "braintech-latest-order",
+            JSON.stringify({
+              ...latestOrder,
+              orderStatus: "Cancelled",
+              cancelledAt: new Date().toISOString(),
+            })
+          );
+        }
+      }
+    } catch (error) {
+      setCancelErrors((previous) => ({
+        ...previous,
+        [order.orderId]:
+          error.message || "Something went wrong. Please try again.",
+      }));
+    } finally {
+      setCancellingOrder(null);
+    }
+  }
 
   if (!loaded) {
     return (
@@ -117,7 +229,15 @@ export default function MyOrdersPage() {
                     </p>
                   </div>
 
-                  <span className="my-order-status">
+                  <span
+                    className={`my-order-status ${
+                      String(order.orderStatus || "")
+                        .toLowerCase()
+                        .includes("cancel")
+                        ? "cancelled"
+                        : ""
+                    }`}
+                  >
                     {order.orderStatus || "Order placed"}
                   </span>
                 </div>
@@ -186,6 +306,31 @@ export default function MyOrdersPage() {
                     Phone: {order.address?.phone || "Not provided"}
                   </p>
                 </details>
+
+                {canCancelOrder(order) && (
+                  <div className="my-order-cancel-section">
+                    <button
+                      type="button"
+                      className="my-order-cancel-button"
+                      onClick={() => handleCancelOrder(order)}
+                      disabled={cancellingOrder === order.orderId}
+                    >
+                      {cancellingOrder === order.orderId
+                        ? "Cancelling..."
+                        : "Cancel Order"}
+                    </button>
+
+                    {cancelErrors[order.orderId] && (
+                      <p className="my-order-cancel-error">
+                        {cancelErrors[order.orderId]}
+                      </p>
+                    )}
+
+                    <p className="my-order-cancel-note">
+                      Orders can only be cancelled before shipping.
+                    </p>
+                  </div>
+                )}
               </article>
             ))}
           </div>
@@ -371,6 +516,11 @@ function OrdersStyles() {
         font-weight: 700;
       }
 
+      .my-order-status.cancelled {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+
       .my-order-items { padding: 0 22px; }
 
       .my-order-item {
@@ -446,6 +596,45 @@ function OrdersStyles() {
 
       .my-order-address p strong { color: #172033; }
 
+      .my-order-cancel-section {
+        padding: 16px 22px 20px;
+        border-top: 1px solid #edf0f5;
+      }
+
+      .my-order-cancel-button {
+        min-height: 39px;
+        padding: 0 16px;
+        border: 1px solid #dc2626;
+        border-radius: 8px;
+        background: #fff;
+        color: #dc2626;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .my-order-cancel-button:hover:not(:disabled) {
+        background: #fef2f2;
+      }
+
+      .my-order-cancel-button:disabled {
+        opacity: .6;
+        cursor: not-allowed;
+      }
+
+      .my-order-cancel-note {
+        margin: 9px 0 0;
+        color: #8791a3;
+        font-size: 11px;
+      }
+
+      .my-order-cancel-error {
+        margin: 10px 0 0;
+        color: #dc2626;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
       .my-orders-back {
         display: block;
         margin-top: 24px;
@@ -474,6 +663,7 @@ function OrdersStyles() {
         .my-order-bottom { padding: 16px 17px; }
         .my-order-address { padding: 14px 17px; }
         .my-order-status { font-size: 10px; }
+        .my-order-cancel-section { padding: 14px 17px 17px; }
       }
     `}</style>
   );
