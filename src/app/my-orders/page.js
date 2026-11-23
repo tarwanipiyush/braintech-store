@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
@@ -27,9 +27,7 @@ const formatDate = (date) => {
 };
 
 const canCancelOrder = (order) => {
-  const status = String(order.orderStatus || "")
-    .trim()
-    .toLowerCase();
+  const status = String(order.orderStatus || "").trim().toLowerCase();
 
   return (
     ["placed", "pending", "processing", "order placed"].includes(status) &&
@@ -40,35 +38,72 @@ const canCancelOrder = (order) => {
 export default function MyOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [loaded, setLoaded] = useState(false);
+  const [loadingError, setLoadingError] = useState("");
   const [cancellingOrder, setCancellingOrder] = useState(null);
   const [cancelErrors, setCancelErrors] = useState({});
 
-  useEffect(() => {
+  const loadOrders = useCallback(async () => {
+    setLoadingError("");
+
     try {
-      const saved = localStorage.getItem("braintech-orders");
-      const latest = localStorage.getItem("braintech-latest-order");
+      const supabase = createClient();
 
-      const history = saved ? JSON.parse(saved) : [];
-      const latestOrder = latest ? JSON.parse(latest) : null;
+      const {
+        data: { session },
+        error: authError,
+      } = await supabase.auth.getSession();
 
-      const validOrders = Array.isArray(history) ? history : [];
+      if (authError || !session?.access_token) {
+        throw new Error("Please sign in to view your orders.");
+      }
 
-      const combined = latestOrder
-        ? [
-            latestOrder,
-            ...validOrders.filter(
-              (order) => order.orderId !== latestOrder.orderId
-            ),
-          ]
-        : validOrders;
+      const response = await fetch("/api/store/orders/list", {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        cache: "no-store",
+      });
 
-      setOrders(combined);
-    } catch {
-      setOrders([]);
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || "Unable to load your orders.");
+      }
+
+      const databaseOrders = Array.isArray(result.orders)
+        ? result.orders
+        : [];
+
+      setOrders(databaseOrders);
+
+      // Keep local order history synchronized with the database.
+      localStorage.setItem(
+        "braintech-orders",
+        JSON.stringify(databaseOrders)
+      );
+
+      if (databaseOrders.length > 0) {
+        localStorage.setItem(
+          "braintech-latest-order",
+          JSON.stringify(databaseOrders[0])
+        );
+      } else {
+        localStorage.removeItem("braintech-latest-order");
+      }
+    } catch (error) {
+      setLoadingError(
+        error.message || "Unable to load your orders. Please try again."
+      );
     } finally {
       setLoaded(true);
     }
   }, []);
+
+  useEffect(() => {
+    loadOrders();
+  }, [loadOrders]);
 
   async function handleCancelOrder(order) {
     const confirmed = window.confirm(
@@ -113,51 +148,16 @@ export default function MyOrdersPage() {
       const result = await response.json();
 
       const alreadyCancelled =
-  String(result.message || "")
-    .toLowerCase()
-    .includes("already been cancelled") ||
-  String(result.orderStatus || "")
-    .toLowerCase() === "cancelled";
+        String(result.message || "")
+          .toLowerCase()
+          .includes("already been cancelled") ||
+        String(result.orderStatus || "").toLowerCase() === "cancelled";
 
-if ((!response.ok || !result.success) && !alreadyCancelled) {
-  throw new Error(
-    result.message || "Unable to cancel this order."
-  );
-}
-
-      const updatedOrders = orders.map((item) =>
-        item.orderId === order.orderId
-          ? {
-              ...item,
-              orderStatus: "Cancelled",
-              cancelledAt: new Date().toISOString(),
-            }
-          : item
-      );
-
-      setOrders(updatedOrders);
-
-      localStorage.setItem(
-        "braintech-orders",
-        JSON.stringify(updatedOrders)
-      );
-
-      const latest = localStorage.getItem("braintech-latest-order");
-
-      if (latest) {
-        const latestOrder = JSON.parse(latest);
-
-        if (latestOrder.orderId === order.orderId) {
-          localStorage.setItem(
-            "braintech-latest-order",
-            JSON.stringify({
-              ...latestOrder,
-              orderStatus: "Cancelled",
-              cancelledAt: new Date().toISOString(),
-            })
-          );
-        }
+      if ((!response.ok || !result.success) && !alreadyCancelled) {
+        throw new Error(result.message || "Unable to cancel this order.");
       }
+
+      await loadOrders();
     } catch (error) {
       setCancelErrors((previous) => ({
         ...previous,
@@ -205,7 +205,24 @@ if ((!response.ok || !result.success) && !alreadyCancelled) {
           </span>
         </div>
 
-        {orders.length === 0 ? (
+        {loadingError && (
+          <div className="my-orders-empty">
+            <h2>Unable to load orders</h2>
+            <p>{loadingError}</p>
+            <button
+              type="button"
+              className="my-orders-primary"
+              onClick={() => {
+                setLoaded(false);
+                loadOrders();
+              }}
+            >
+              Try again
+            </button>
+          </div>
+        )}
+
+        {!loadingError && orders.length === 0 && (
           <div className="my-orders-empty">
             <div className="my-orders-empty-icon">📦</div>
             <h2>No orders yet</h2>
@@ -216,7 +233,9 @@ if ((!response.ok || !result.success) && !alreadyCancelled) {
               Start shopping
             </Link>
           </div>
-        ) : (
+        )}
+
+        {!loadingError && orders.length > 0 && (
           <div className="my-orders-list">
             {orders.map((order) => (
               <article className="my-order-card" key={order.orderId}>
@@ -459,11 +478,13 @@ function OrdersStyles() {
         align-items: center;
         justify-content: center;
         padding: 0 20px;
+        border: 0;
         border-radius: 9px;
         background: #2563eb;
         color: white;
         font-size: 13px;
         font-weight: 700;
+        cursor: pointer;
       }
 
       .my-orders-list {
@@ -514,6 +535,7 @@ function OrdersStyles() {
         color: #166534;
         font-size: 11px;
         font-weight: 700;
+        text-transform: capitalize;
       }
 
       .my-order-status.cancelled {

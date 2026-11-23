@@ -6470,3 +6470,170 @@ button.cat-card { width: 100%; padding: 0; font: inherit; color: inherit; text-a
     padding: 19px;
   }
 }
+
+/* BRAINTECH MOBILE HEADER - CORRECTED */
+@media (max-width: 760px) {
+  .header-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 12px;
+    min-height: auto;
+  }
+
+  .brand {
+    min-width: 0;
+    gap: 8px;
+  }
+
+  .brand-mark {
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+  }
+
+  .brand b {
+    font-size: 14px;
+  }
+
+  .brand small {
+    font-size: 7px;
+    letter-spacing: 1px;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 9px;
+  }
+
+  .header-actions .header-action:first-child {
+    display: none;
+  }
+
+  .header-action {
+    min-width: 25px;
+  }
+
+  .header-action > span {
+    font-size: 21px;
+  }
+
+  .header-action small {
+    font-size: 8px;
+  }
+
+  .header-action .cart-items-label {
+    display: none;
+  }
+
+  .auth-header-links {
+    display: flex;
+    gap: 6px;
+  }
+
+  .auth-login-link {
+    font-size: 10px;
+    padding: 9px;
+    white-space: nowrap;
+  }
+
+  .auth-register-link {
+    display: none;
+  }
+
+  .account-button-label,
+  .account-chevron {
+    display: none;
+  }
+
+  .search-box {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .bt-nav-inner {
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}
+@media (max-width: 760px) {
+  .auth-header-links .auth-register-link {
+    display: none !important;
+  }
+}
+
+
+/* Mobile account links */
+@media (max-width: 760px) {
+  .site-header .header-main .header-actions .auth-header-links {
+    display: flex !important;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .site-header .header-main .header-actions .auth-login-link {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    font-size: 10px;
+    padding: 8px 10px;
+  }
+
+ .site-header .header-main .header-actions .auth-register-link {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  font-size: 10px;
+  padding: 8px 9px;
+}
+}
+
+/* BRAINTECH ASSISTANT - MOBILE RESPONSIVE FIX */
+@media (max-width: 760px) {
+  .ai-root {
+    right: 12px;
+    bottom: 12px;
+    gap: 10px;
+  }
+
+  .ai-fab {
+    width: 54px;
+    height: 54px;
+    min-width: 54px;
+    padding: 0;
+    justify-content: center;
+    gap: 0;
+  }
+
+  .ai-fab-icon {
+    width: 42px;
+    height: 42px;
+    font-size: 21px;
+  }
+
+  .ai-fab-label {
+    display: none;
+  }
+
+  .ai-fab.is-open {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+  }
+
+  .ai-panel {
+    width: calc(100vw - 24px);
+    max-width: 400px;
+    height: min(600px, calc(100dvh - 100px));
+    max-height: calc(100dvh - 100px);
+    border-radius: 16px;
+  }
+}
