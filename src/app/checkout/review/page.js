@@ -275,7 +275,7 @@ const customer = {
 };
 
 const response = await fetch(
-  "https://skilllynxedubridge.com/api/braintech/orders.php",
+  "/api/store/orders",
   {
     method: "POST",
     headers: {
