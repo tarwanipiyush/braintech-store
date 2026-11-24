@@ -297,12 +297,20 @@ useEffect(() => {
   const [bestSellerIds, setBestSellerIds] = useState([]);
   const [quickView, setQuickView] = useState(null);
 
-  // Category-specific filter state.
-  const [selectedBrands, setSelectedBrands] = useState([]);
-  const [selectedAttributes, setSelectedAttributes] = useState([]);
-  const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
-  const [filtersOpen, setFiltersOpen] = useState(true);
+// Draft filter selections
+const [selectedBrands, setSelectedBrands] = useState([]);
+const [selectedAttributes, setSelectedAttributes] = useState([]);
+const [minPrice, setMinPrice] = useState("");
+const [maxPrice, setMaxPrice] = useState("");
+
+// Applied filters
+const [appliedBrands, setAppliedBrands] = useState([]);
+const [appliedAttributes, setAppliedAttributes] = useState([]);
+const [appliedMinPrice, setAppliedMinPrice] = useState("");
+const [appliedMaxPrice, setAppliedMaxPrice] = useState("");
+
+const [filterError, setFilterError] = useState("");
+const [filtersOpen, setFiltersOpen] = useState(true);
 
   useEffect(() => {
     if (!hasInitialFilter) return;
@@ -404,22 +412,24 @@ const matchesProductTab =
   (productTab === "Best Sellers" &&
     bestSellerIds.includes(Number(product.id)));
       const matchesBrand =
-        selectedBrands.length === 0 ||
-        selectedBrands.includes(getProductBrand(product));
+  appliedBrands.length === 0 ||
+  appliedBrands.includes(getProductBrand(product));
 
       const productAttributes = getProductAttributes(product);
 
       const matchesAttributes =
-        selectedAttributes.length === 0 ||
-        selectedAttributes.some((attribute) =>
-          productAttributes.includes(attribute)
-        );
+  appliedAttributes.length === 0 ||
+  appliedAttributes.some((attribute) =>
+    productAttributes.includes(attribute)
+  );
 
       const price = Number(product.price) || 0;
-      const matchesMinPrice =
-        minPrice === "" || price >= Number(minPrice);
-      const matchesMaxPrice =
-        maxPrice === "" || price <= Number(maxPrice);
+
+const matchesMinPrice =
+  appliedMinPrice === "" || price >= Number(appliedMinPrice);
+
+const matchesMaxPrice =
+  appliedMaxPrice === "" || price <= Number(appliedMaxPrice);
 
       return (
         matchesSearch &&
@@ -466,19 +476,51 @@ const matchesProductTab =
   specialOnly,
   productTab,
   bestSellerIds,
-  selectedBrands,
-  selectedAttributes,
-  minPrice,
-  maxPrice,
+  appliedBrands,
+appliedAttributes,
+appliedMinPrice,
+appliedMaxPrice,
   sort,
 ]);
 
-  function resetCategoryFilters() {
-    setSelectedBrands([]);
-    setSelectedAttributes([]);
-    setMinPrice("");
-    setMaxPrice("");
+ function resetCategoryFilters() {
+  setSelectedBrands([]);
+  setSelectedAttributes([]);
+  setMinPrice("");
+  setMaxPrice("");
+
+  setAppliedBrands([]);
+  setAppliedAttributes([]);
+  setAppliedMinPrice("");
+  setAppliedMaxPrice("");
+
+  setFilterError("");
+}
+
+function applyCategoryFilters() {
+  const min = minPrice.trim() === "" ? "" : Number(minPrice);
+  const max = maxPrice.trim() === "" ? "" : Number(maxPrice);
+
+  if (
+    (min !== "" && (!Number.isFinite(min) || min < 0)) ||
+    (max !== "" && (!Number.isFinite(max) || max < 0))
+  ) {
+    setFilterError("Please enter valid non-negative prices.");
+    return;
   }
+
+  if (min !== "" && max !== "" && min > max) {
+    setFilterError("Minimum price cannot exceed maximum price.");
+    return;
+  }
+
+  setAppliedBrands([...selectedBrands]);
+  setAppliedAttributes([...selectedAttributes]);
+  setAppliedMinPrice(min === "" ? "" : String(min));
+  setAppliedMaxPrice(max === "" ? "" : String(max));
+
+  setFilterError("");
+}
 
   function chooseCategory(category) {
     setActiveCategory(category);
@@ -847,6 +889,19 @@ return (
       )}
 
       <div className="bt-filter-footer">
+        {filterError && (
+  <p className="bt-filter-error" role="alert">
+    {filterError}
+  </p>
+)}
+
+<button
+  type="button"
+  className="bt-apply-filters"
+  onClick={applyCategoryFilters}
+>
+  Search Products →
+</button>
         <span>{activeFilterCount} active</span>
         <button type="button" onClick={resetCategoryFilters}>
           Clear filters
