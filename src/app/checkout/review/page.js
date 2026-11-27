@@ -78,7 +78,7 @@ async function applyCoupon() {
 
   try {
     const response = await fetch(
-      "https://skilllynxedubridge.com/api/braintech/validate-coupon.php",
+      "/api/store/coupons/validate",
       {
         method: "POST",
         headers: {
@@ -208,18 +208,25 @@ setFreeShippingThreshold(0);
 
 
 
-  useEffect(() => {
-    if (!loaded || !addressLoaded) return;
+useEffect(() => {
+  if (!loaded || !addressLoaded) return;
 
-    if (!cart.length) {
-      router.replace("/cart");
-      return;
-    }
+  if (!cart.length && !placingOrder) {
+    router.replace("/cart");
+    return;
+  }
 
-    if (!address) {
-      router.replace("/checkout");
-    }
-  }, [loaded, addressLoaded, cart.length, address, router]);
+  if (!address && !placingOrder) {
+    router.replace("/checkout");
+  }
+}, [
+  loaded,
+  addressLoaded,
+  cart.length,
+  address,
+  placingOrder,
+  router,
+]);
 
 
 
@@ -358,7 +365,7 @@ shipping: Number(savedOrder.shippingCost) || 0,        total: Number(savedOrder.
       );
 
       clearCart();
-      router.push("/checkout/confirmation");
+     router.replace("/checkout/confirmation");
     } catch (err) {
       setError(
         err instanceof Error
@@ -879,7 +886,128 @@ shipping: Number(savedOrder.shippingCost) || 0,        total: Number(savedOrder.
           font-size: 19px;
           color: #172033;
         }
+/* Coupon section */
+.review-coupon {
+  margin: 0 0 24px;
+  padding: 16px;
+  background: #f8faff;
+  border: 1px solid #e1e9f8;
+  border-radius: 12px;
+}
 
+.review-coupon label {
+  display: block;
+  margin-bottom: 11px;
+  color: #26344d;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.review-coupon-input {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+}
+
+.review-coupon-input input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid #d5deed;
+  border-radius: 8px;
+  outline: none;
+  background: #fff;
+  color: #172033;
+  font-size: 13px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.review-coupon-input input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.10);
+}
+
+.review-coupon-input input::placeholder {
+  color: #9aa5b7;
+}
+
+.review-coupon-input button {
+  min-width: 76px;
+  padding: 0 15px;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.review-coupon-input button:hover:not(:disabled) {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.review-coupon-input button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.review-coupon-error {
+  margin: 10px 0 0;
+  color: #dc2626;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.review-coupon-success {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  background: #f0fdf4;
+  color: #15803d;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.review-coupon-success button {
+  flex-shrink: 0;
+  padding: 5px 9px;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  background: #fff;
+  color: #15803d;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.review-coupon-success button:hover:not(:disabled) {
+  background: #dcfce7;
+}
+
+@media (max-width: 560px) {
+  .review-coupon {
+    padding: 13px;
+  }
+
+  .review-coupon-input {
+    gap: 6px;
+  }
+
+  .review-coupon-input button {
+    min-width: 68px;
+    padding: 0 11px;
+  }
+}
         .review-edit {
           color: #2563eb;
           font-size: 13px;

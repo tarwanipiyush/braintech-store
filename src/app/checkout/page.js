@@ -235,7 +235,7 @@ export default function CheckoutPage() {
       );
 
       setSaving(true);
-      router.push("/checkout/review");
+      router.replace("/checkout/review");
     } catch {
       setError(
         "Unable to save your address in this browser. Please try again."
